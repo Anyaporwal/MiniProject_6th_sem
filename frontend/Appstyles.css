@@ -1,0 +1,180 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  font-family: system-ui, Arial, sans-serif;
+}
+
+/* Main App Layout */
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================= NAVBAR ================= */
+
+.navbar {
+  height: 60px;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 25px;
+}
+
+.navbar h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-links button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.nav-links button:hover {
+  background: #1a73e8;
+}
+
+.nav-links .active {
+  background: #1a73e8;
+  border: none;
+}
+
+/* ================= MAP ================= */
+
+.map-container {
+  flex: 1;
+  position: relative;
+}
+
+/* ================= PANEL ================= */
+
+.panel {
+  position: absolute;
+  top: 80px; /* pushed down because navbar added */
+  left: 20px;
+  z-index: 5;
+  width: 340px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  padding: 16px;
+}
+
+.panel h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.panel label {
+  display: block;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.panel input,
+.panel select,
+.panel button,
+.panel textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+.panel textarea {
+  resize: none;
+  height: 80px;
+}
+
+.panel button {
+  border: 0;
+  background: #1a73e8;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.panel button:hover {
+  background: #1558b0;
+}
+
+/* ================= ALERT ================= */
+
+.alert {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.alert.safe  { 
+  background: #e8f5e9; 
+  color: #2e7d32;
+}
+
+.alert.risky { 
+  background: #ffebee; 
+  color: #c62828;
+}
+
+/* ================= CENTER CARD (Report & Tips) ================= */
+
+.center-card {
+  margin: 100px auto;
+  width: 500px;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.center-card h3 {
+  margin-top: 0;
+}
+
+.main-content {
+  display: flex;
+  height: calc(100vh - 70px);
+}
+
+.map-section {
+  flex: 2;
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+
+.side-panel {
+  flex: 1;
+  background: white;
+  padding: 20px;
+  overflow-y: auto;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.08);
+}
+
+.center-card {
+  margin: auto;
+  background: white;
+  padding: 30px;
+  width: 400px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}

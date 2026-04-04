@@ -1,0 +1,52 @@
+# GENERAL
+*.log
+
+
+# ENVIRONMENT VARIABLES
+.env
+.env.*
+*.env
+
+# PYTHON (BACKEND - FASTAPI)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+
+# NODE (FRONTEND)
+node_modules/
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vite
+.vite/
+
+
+# IDE / EDITOR
+.vscode/
+
+# OS FILES
+desktop.ini
+
+# TEST / CACHE
+.pytest_cache/
+.coverage
+htmlcov/
