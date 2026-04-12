@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Report Incident - SafeRoute</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary": "#68000a",
+            "on-secondary-fixed-variant": "#00522c",
+            "on-tertiary-fixed-variant": "#930013",
+            "inverse-primary": "#00629d",
+            "outline-variant": "#404751",
+            "secondary-container": "#2ca464",
+            "on-primary-fixed": "#001d34",
+            "secondary": "#6bdc96",
+            "on-primary-container": "#002f4e",
+            "primary-fixed": "#cfe5ff",
+            "tertiary": "#ffb3ad",
+            "primary-fixed-dim": "#99cbff",
+            "tertiary-fixed-dim": "#ffb3ad",
+            "background": "#0b1326",
+            "surface-container-highest": "#2d3449",
+            "surface-container": "#171f33",
+            "primary-container": "#4299e1",
+            "outline": "#8a919c",
+            "tertiary-container": "#ff5b56",
+            "tertiary-fixed": "#ffdad7",
+            "inverse-surface": "#dae2fd",
+            "secondary-fixed": "#88f9b0",
+            "inverse-on-surface": "#283044",
+            "on-secondary-container": "#003118",
+            "error-container": "#93000a",
+            "surface-dim": "#0b1326",
+            "secondary-fixed-dim": "#6bdc96",
+            "error": "#ffb4ab",
+            "on-tertiary-fixed": "#410004",
+            "on-primary": "#003355",
+            "on-surface": "#dae2fd",
+            "on-error-container": "#ffdad6",
+            "surface-variant": "#2d3449",
+            "surface-bright": "#31394d",
+            "on-error": "#690005",
+            "on-secondary": "#00391d",
+            "surface": "#0b1326",
+            "surface-container-lowest": "#060e20",
+            "on-tertiary-container": "#610008",
+            "on-primary-fixed-variant": "#004a78",
+            "surface-container-high": "#222a3d",
+            "on-surface-variant": "#c0c7d2",
+            "primary": "#99cbff",
+            "surface-container-low": "#131b2e",
+            "on-secondary-fixed": "#00210f",
+            "on-background": "#dae2fd",
+            "surface-tint": "#99cbff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline": ["Inter"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body { font-family: 'Inter', sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-900/80 backdrop-blur-xl flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-blue-400 dark:text-blue-300" data-icon="security">security</span>
+<h1 class="font-bold tracking-tight text-lg Inter text-blue-400 dark:text-blue-300">SafeRoute</h1>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-slate-800 border border-outline-variant/20">
+<img alt="User Profile" data-alt="modern minimalist profile avatar placeholder for a mobile security application" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhxjxTP7-mfZ4wXitpIxXKWYTQJeluUpD1kAcrCwQt9WGxUFOOdxweAwO8ypB-9YCZMbhOn5BGWvoqwi8NBbl5Q6rrIayzBcaD601v0tfhGJwilBq5wLWkp0zBGCgTmsDN4lxyos-hYwI6tGFNLVrTM8ancxr8oLx3bJiHZvIgTFpmSxf9CiYMZq4B9XaSZwTNtqOGu4yGLGeMd34AwcesZbFUeg_R903rh7ZVtv_sOvWwcjWhGEFZ-E9ZvUw0L2IyP8EM3ZEK9omj"/>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="mt-20 px-6 max-w-2xl mx-auto">
+<header class="mb-8">
+<h2 class="text-3xl font-black tracking-tight text-on-surface mb-2">Report an Incident</h2>
+<p class="text-on-surface-variant text-sm">Your report helps keep Nagpur safe. Information is shared anonymously with local authorities.</p>
+</header>
+<!-- Incident Form -->
+<div class="space-y-4">
+<!-- Incident Type -->
+<div class="bg-[#1e293b] p-5 rounded-xl shadow-sm">
+<label class="block text-xs font-bold uppercase tracking-widest text-primary-fixed-dim mb-3">Incident Type</label>
+<div class="relative">
+<select class="w-full bg-surface-container-low border-none text-on-surface rounded-lg py-3 px-4 appearance-none focus:ring-2 focus:ring-primary-container">
+<option>Theft</option>
+<option>Assault</option>
+<option>Harassment</option>
+<option>Suspicious Activity</option>
+<option>Other</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<!-- Location -->
+<div class="bg-[#1e293b] p-5 rounded-xl shadow-sm">
+<label class="block text-xs font-bold uppercase tracking-widest text-primary-fixed-dim mb-3">Location</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary" data-icon="location_on">location_on</span>
+<input class="w-full bg-surface-container-low border-none text-on-surface rounded-lg py-3 pl-12 pr-4 focus:ring-2 focus:ring-primary-container" placeholder="Enter street or landmark" type="text"/>
+</div>
+<div class="mt-3 h-32 rounded-lg overflow-hidden relative">
+<img class="w-full h-full object-cover opacity-50 grayscale" data-alt="dark themed city map of nagpur showing streets and blocks in a minimalist cyber style" data-location="Nagpur" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAec8omSyH5mlKlCjweS1gxKleyJdz44HOdPTutJE0-phSzc7stSvx41XyRCw8W6q_IXwEniIux5xDvIPnJ2wEsvUhPl9QRAFQ255tacNGOQErA267bLcjVTh4xUAt85FHxl5KkIPgXizDLU1XnqH1tIwG3AJOub48VfExSq1osBBlYTd14eR6tAY8Ydua7PAhc7YaXv4aIV87vqiDmB75BOEO05qqpmPetrLYnXajYRxvcSetXXK_jysgrzlA-O85_bdfDOQxtTOya"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="bg-primary/20 p-2 rounded-full border border-primary/50 animate-pulse">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="location_pin" style="font-variation-settings: 'FILL' 1;">location_pin</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bento Grid for Date & Time -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-[#1e293b] p-5 rounded-xl shadow-sm">
+<label class="block text-xs font-bold uppercase tracking-widest text-primary-fixed-dim mb-3">Date</label>
+<div class="flex items-center bg-surface-container-low rounded-lg px-4 py-3">
+<span class="material-symbols-outlined text-on-surface-variant mr-3" data-icon="calendar_today">calendar_today</span>
+<input class="bg-transparent border-none text-on-surface focus:ring-0 w-full" type="date"/>
+</div>
+</div>
+<div class="bg-[#1e293b] p-5 rounded-xl shadow-sm">
+<label class="block text-xs font-bold uppercase tracking-widest text-primary-fixed-dim mb-3">Time</label>
+<div class="flex items-center bg-surface-container-low rounded-lg px-4 py-3">
+<span class="material-symbols-outlined text-on-surface-variant mr-3" data-icon="schedule">schedule</span>
+<input class="bg-transparent border-none text-on-surface focus:ring-0 w-full" type="time"/>
+</div>
+</div>
+</div>
+<!-- Description -->
+<div class="bg-[#1e293b] p-5 rounded-xl shadow-sm">
+<label class="block text-xs font-bold uppercase tracking-widest text-primary-fixed-dim mb-3">Description</label>
+<textarea class="w-full bg-surface-container-low border-none text-on-surface rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary-container resize-none" placeholder="Provide details about the incident..." rows="4"></textarea>
+</div>
+<!-- Upload -->
+<div class="bg-[#1e293b] p-5 rounded-xl shadow-sm">
+<button class="w-full border-2 border-dashed border-outline-variant/30 rounded-xl py-6 flex flex-col items-center justify-center gap-2 hover:bg-surface-container-high transition-colors group">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant group-hover:text-primary transition-colors" data-icon="photo_camera">photo_camera</span>
+<span class="text-sm font-medium text-on-surface-variant">Upload Photo</span>
+</button>
+</div>
+<!-- Submit CTA -->
+<div class="pt-4">
+<button class="w-full bg-primary-container text-on-primary-container font-black py-5 rounded-xl shadow-[0_10px_25px_-5px_rgba(66,153,225,0.4)] active:scale-95 duration-200 uppercase tracking-widest text-sm">
+          Submit Report
+        </button>
+</div>
+<!-- Success Card (Initially Hidden in real flow, visible here for demonstration) -->
+<div class="bg-secondary/10 border border-secondary/20 p-4 rounded-xl flex items-center gap-4 mt-8">
+<div class="bg-secondary text-on-secondary w-10 h-10 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined font-bold" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div>
+<h4 class="font-bold text-secondary">Report Submitted Successfully</h4>
+<p class="text-xs text-secondary/70">Ref ID: #SR-99201. Monitoring in progress.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-slate-900/90 backdrop-blur-xl z-50 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
+<!-- Map -->
+<a class="flex flex-col items-center justify-center text-slate-500 p-2 hover:text-blue-200 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="text-[10px] font-bold uppercase tracking-widest Inter mt-1">Map</span>
+</a>
+<!-- Route -->
+<a class="flex flex-col items-center justify-center text-slate-500 p-2 hover:text-blue-200 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="directions">directions</span>
+<span class="text-[10px] font-bold uppercase tracking-widest Inter mt-1">Route</span>
+</a>
+<!-- Report (Active) -->
+<a class="flex flex-col items-center justify-center bg-blue-500/20 text-blue-300 rounded-xl p-2 px-4 shadow-[0_0_15px_rgba(59,130,246,0.3)] active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="report_problem" style="font-variation-settings: 'FILL' 1;">report_problem</span>
+<span class="text-[10px] font-bold uppercase tracking-widest Inter mt-1">Report</span>
+</a>
+<!-- Tips -->
+<a class="flex flex-col items-center justify-center text-slate-500 p-2 hover:text-blue-200 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="lightbulb">lightbulb</span>
+<span class="text-[10px] font-bold uppercase tracking-widest Inter mt-1">Tips</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-slate-500 p-2 hover:text-blue-200 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-bold uppercase tracking-widest Inter mt-1">Profile</span>
+</a>
+</nav>
+</body></html>
