@@ -100,5 +100,11 @@
         "phone": "9459389327578",
         "email": "porwalaa@rknec.edu",
         "relationship": "friend"
+    },
+    {
+        "name": "xyz",
+        "phone": "989898987",
+        "email": "abc@rknec.edu",
+        "relationship": "abc"
     }
 ]

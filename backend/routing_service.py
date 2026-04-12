@@ -306,6 +306,7 @@ def _generate_detour_waypoints(
 
     # Two perpendicular candidates (left / right of route midpoint)
     candidates = [
+
         {
             "lat": mid_lat + (dlon / length) * base_offset,
             "lon": mid_lon - (dlat / length) * base_offset,
