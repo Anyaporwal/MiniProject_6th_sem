@@ -44,7 +44,7 @@ export default function ReportScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [locationSuggestions, setLocationSuggestions] = useState([]);
 
-  const MAPS_API_KEY = 'AIzaSyDn9xUE0VfZk8QspYBkIhyMdxOfPDLVg4g';
+  const MAPS_API_KEY = process.env.EXPO_PUBLIC_MAPS_API_KEY;
 
   const reverseGeocode = async (latitude, longitude) => {
     try {

@@ -7,7 +7,7 @@ import * as Location from 'expo-location';
 import { colors, typography } from '../theme';
 import { calculateRoutes } from '../services/api';
 
-const MAPS_API_KEY = 'AIzaSyDn9xUE0VfZk8QspYBkIhyMdxOfPDLVg4g';
+const MAPS_API_KEY = process.env.EXPO_PUBLIC_MAPS_API_KEY;
 
 const geocodeAddress = async (address) => {
     try {
