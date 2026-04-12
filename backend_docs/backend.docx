@@ -1,0 +1,2658 @@
+2. PRODUCT SCOPE
+2.1 In-Scope Features
+Phase 1: Core Functionality (MVP - Months 1-8)
+
+✅ Historical crime data ingestion and preprocessing
+✅ DBSCAN/HDBSCAN clustering for hotspot identification
+✅ LSTM-based temporal risk forecasting
+✅ Dynamic risk scoring algorithm (DCTI)
+✅ Mobile application (iOS/Android) with basic alerts
+✅ Interactive heatmap visualization
+✅ User registration and authentication
+✅ Basic route safety scoring
+
+Phase 2: Enhanced Features (Months 9-12)
+
+✅ Women Safety Mode with isolation detection
+✅ Safe route navigation with multiple path options
+✅ Crowdsourced incident reporting
+✅ Authority dashboard with analytics
+✅ Push notification system
+✅ Offline map caching
+✅ Emergency contact integration
+✅ Alert threshold configuration (authority feature)
+
+Phase 3: Advanced Capabilities (Months 13-18)
+
+✅ Edge AI deployment for low-latency predictions
+✅ Explainable AI outputs for authorities
+✅ Advanced patrol optimization algorithms
+✅ Trend forecasting and emerging hotspot detection
+✅ Multi-city deployment architecture
+✅ API for third-party integrations
+✅ Incident management dashboard
+
+2.2 Out-of-Scope Features
+The following features are explicitly excluded from current product development:
+Excluded from All Phases:
+
+❌ IoT sensor network integration (gunshot detection, crowd sensors, smart lighting)
+
+Rationale: Requires third-party hardware partnerships and municipal infrastructure not available in most cities
+Future consideration: Phase 4 (Year 2+) when smart city infrastructure matures
+
+
+❌ CCTV/Computer vision analysis
+
+Rationale: Privacy concerns, regulatory complexity, high computational costs
+Future consideration: Phase 5 with strict privacy frameworks
+
+
+❌ Facial recognition or person identification
+
+Rationale: Violates ethical AI principles and EU AI Act
+Future consideration: Never (fundamentally incompatible with product values)
+
+
+❌ Individual person risk scoring or predictive profiling
+
+Rationale: Illegal in EU, unethical, high bias risk
+Future consideration: Never
+
+
+❌ Direct 911/emergency dispatch integration
+
+Rationale: Regulatory approvals required, liability concerns
+Future consideration: Phase 4 with proper legal frameworks
+
+
+❌ Private property monitoring
+
+Rationale: Privacy violations, requires explicit property owner consent
+Future consideration: Phase 4 with opt-in frameworks
+
+
+❌ Wearable device biometric monitoring
+
+Rationale: Health data privacy regulations (HIPAA-like), limited hardware partnerships
+Future consideration: Phase 3-4 with major wearable manufacturers
+
+
+❌ Social media sentiment analysis
+
+Rationale: High false positive rate, privacy concerns, API limitations
+Future consideration: Phase 4 with validated methodologies
+
+
+❌ Blockchain-based data verification
+
+Rationale: Technology not mature enough, high cost, limited value-add
+Future consideration: Reassess in 2027+
+
+2.4 Data Sources
+Primary Data Sources (Required for MVP)
+
+Official Crime Records
+
+Police department FIR databases
+Government open data portals (data.gov, police APIs)
+Emergency service call records (anonymized)
+Minimum 3 years historical data required
+
+
+Crowdsourced Reports
+
+User-submitted incident reports via mobile app
+Community safety feedback
+Women-specific safety markers
+
+
+Environmental Data
+
+Weather conditions (visibility, precipitation)
+Public event calendars
+Transit schedules
+Business operating hours
+
+
+
+Secondary Data Sources (Optional Enhancements)
+
+Census demographic data
+Street lighting databases
+Point-of-interest (POI) data
+Traffic flow data
+
+Excluded Data Sources (Current Phase)
+
+Real-time IoT sensor feeds
+CCTV video streams
+Social media posts
+Cellular location tracking
+
+2.5 Technology Constraints
+Must Use:
+
+Location-based risk assessment only (no person profiling)
+Open-source ML libraries where possible
+Cloud-agnostic architecture
+Standard REST APIs
+Industry-standard encryption
+
+Must Avoid:
+
+Proprietary ML models requiring licensing
+Platform-locked technologies
+Privacy-invasive tracking methods
+Unauditable "black box" AI
+
+
+4. FUNCTIONAL REQUIREMENTS
+4.1 Data Management Module
+FR-DM-001: Crime Data Ingestion
+Priority: P0 (Critical)
+User Story: As a system administrator, I want to automatically ingest crime data from multiple sources so the system has up-to-date information.
+Description: System shall automatically ingest historical crime data from government open data APIs and uploaded CSV files.
+Acceptance Criteria:
+
+Support API integration for real-time data feeds (REST APIs)
+Accept manual CSV/Excel file uploads via web interface
+Parse minimum required fields: crime_type, latitude, longitude, occurred_at
+Validate data quality:
+
+Flag missing required fields
+Reject invalid coordinates (lat: -90 to 90, lon: -180 to 180)
+Flag future dates as errors
+Detect duplicate records (same location + time + type within 100m / 1 hour)
+
+
+Log all ingestion errors with detailed error messages and timestamps
+Process minimum 100,000 records within 5 minutes
+Support incremental updates (delta loads, not full refresh)
+Maintain data lineage (source, ingestion timestamp)
+
+API Endpoints:
+POST /api/v1/admin/crime-data/upload
+POST /api/v1/admin/crime-data/api-sync
+GET  /api/v1/admin/crime-data/ingestion-status
+Data Sources Supported:
+
+Government open data portals (data.gov, police.uk)
+Police department FIR databases (via API or export)
+Manual uploads from partner agencies
+Scheduled batch imports (daily, weekly)
+
+Error Handling:
+
+Quarantine invalid records for manual review
+Email notifications to administrators on ingestion failures
+Retry logic for API failures (3 attempts with exponential backoff)
+
+
+FR-DM-002: Crowdsourced Incident Reporting
+Priority: P1 (High)
+User Story: As a citizen, I want to report safety incidents I witness so the community is aware and authorities are notified.
+Description: Users shall submit safety incidents and concerns through mobile application with location, time, and description.
+Acceptance Criteria:
+
+Capture GPS coordinates automatically (with user permission)
+Allow manual address entry if GPS unavailable or inaccurate
+Support incident categorization with dropdown:
+
+Theft
+Assault
+Harassment
+Suspicious Activity
+Other (with mandatory description)
+
+
+Enable photo attachment:
+
+Maximum 3 photos per report
+Max 5MB per photo
+Supported formats: JPEG, PNG
+Auto-compress if over size limit
+
+
+Optional text description (max 500 characters)
+Timestamp recorded automatically (device time + server time)
+Reports stored with user_id for abuse prevention
+Validation prevents spam:
+
+Max 10 reports per user per 24 hours
+Rate limiting: 3 reports per hour
+IP-based duplicate detection
+
+
+Anonymous reporting option (doesn't link to user profile, but logs IP)
+Confirmation screen showing submitted report details
+Reference number generation (format: INC-YYYY-NNNNNN)
+
+UI Requirements:
+
+Single-tap "Report Incident" button on main screen
+Form completion time: <60 seconds
+Progress indicator for photo uploads
+Offline capability: queue reports when no connectivity
+
+Privacy Controls:
+
+User can delete their own reports within 24 hours
+Reports auto-expire from public view after 90 days (retained in database)
+Photos stripped of EXIF metadata
+
+
+FR-DM-003: Data Preprocessing Pipeline
+Priority: P0 (Critical)
+User Story: As a data engineer, I want automated data cleaning so ML models receive high-quality input.
+Description: System shall clean, normalize, and enrich crime data before machine learning processing.
+Acceptance Criteria:
+Data Cleaning:
+
+Remove duplicate records based on composite key:
+
+(crime_type, location, timestamp) combinations
+Within 100-meter radius and 1-hour window
+Keep earliest record when duplicates found
+
+
+Standardize crime type taxonomy to 10 primary categories:
+
+Theft → "theft"
+Robbery, Burglary → "theft"
+Assault, Battery → "assault"
+Harassment, Stalking → "harassment"
+Vandalism, Graffiti → "vandalism"
+Drug possession, Drug trafficking → "drug_related"
+
+
+Convert all coordinates to WGS84 standard (EPSG:4326)
+Geocode address-based records to latitude/longitude using:
+
+Google Maps Geocoding API (primary)
+Fallback to OpenStreetMap Nominatim
+Cache geocoded results for performance
+
+
+
+Feature Engineering:
+
+Extract temporal features:
+
+hour (0-23)
+day_of_week (Monday-Sunday)
+month (1-12)
+season (Winter, Spring, Summer, Fall)
+is_weekend (boolean)
+is_holiday (boolean, using local holiday calendar)
+
+
+Calculate spatial features:
+
+distance_to_police_station (km, nearest)
+distance_to_hospital (km, nearest)
+distance_to_transit_stop (km, nearest within 500m)
+population_density (people per sq km, from census data)
+business_density (POIs within 500m radius)
+
+
+Flag outlier records (>3 standard deviations from mean) for manual review
+Generate data quality report after each preprocessing run:
+
+Records processed
+Duplicates removed
+Invalid records rejected
+Features generated
+Processing time
+
+
+
+Performance Requirements:
+
+Process 100K records in <10 minutes
+Incremental processing for new records (<1 minute latency)
+Parallel processing for large batches
+
+Output Schema:
+json{
+  "crime_id": "string",
+  "crime_type": "string",
+  "latitude": "float",
+  "longitude": "float",
+  "occurred_at": "datetime",
+  "hour": "int",
+  "day_of_week": "string",
+  "month": "int",
+  "season": "string",
+  "is_weekend": "boolean",
+  "is_holiday": "boolean",
+  "distance_to_police": "float",
+  "distance_to_hospital": "float",
+  "population_density": "float",
+  "precinct": "string",
+  "data_quality_score": "float"
+}
+
+4.2 Machine Learning Module
+FR-ML-001: Spatial Clustering (DBSCAN/HDBSCAN)
+Priority: P0 (Critical)
+User Story: As a crime analyst, I want to identify crime hotspots with irregular shapes so I can deploy patrols to actual problem areas, not just grid squares.
+Description: System shall identify crime hotspots using DBSCAN clustering algorithm to detect non-linear, density-based hotspot boundaries.
+Acceptance Criteria:
+
+Implement DBSCAN with Haversine distance metric for lat/lon coordinates
+Support configurable parameters:
+
+eps (epsilon): Maximum distance between points (typical range: 0.01-0.1 km)
+min_samples: Minimum points to form dense region (typical: 10-30)
+Parameters auto-tuned using grid search on initial deployment
+
+
+Identify hotspot clusters and mark outlier crimes as noise
+Generate cluster boundaries as polygon geometries (GeoJSON format)
+Store cluster metadata:
+
+cluster_id (integer)
+center_point (lat, lon)
+radius (km, max distance from center)
+crime_count (total crimes in cluster)
+primary_crime_types (top 3 crime types by frequency)
+risk_score (0-100, calculated separately)
+
+
+Re-cluster data monthly OR when new data exceeds 5% of training set
+Achieve clustering completion within 10 minutes for 100K records
+Support HDBSCAN (hierarchical variant) for adaptive density detection
+
+Mathematical Specification:
+DBSCAN Parameters:
+- eps (ε): 0.5 km (500 meters) default
+- min_samples: 15 default
+- metric: Haversine (for geographic coordinates)
+- algorithm: ball_tree (for efficient spatial queries)
+
+Distance Calculation:
+Haversine(lat1, lon1, lat2, lon2) = 2 * R * arcsin(sqrt(
+    sin²((lat2-lat1)/2) + cos(lat1)*cos(lat2)*sin²((lon2-lon1)/2)
+))
+where R = 6371 km (Earth radius)
+
+Output Classifications:
+- Core points: Points with ≥ min_samples neighbors within ε
+- Border points: Non-core points within ε of a core point
+- Noise points: Points not reachable from any core point
+- Cluster labels: 0, 1, 2, ... (noise = -1)
+Output Format:
+json{
+  "hotspot_id": "HS-001",
+  "cluster_id": 0,
+  "boundary": {
+    "type": "Polygon",
+    "coordinates": [[[lon, lat], [lon, lat], ...]]
+  },
+  "center_point": {"lat": 40.7128, "lon": -74.0060},
+  "radius_km": 0.45,
+  "crime_count": 157,
+  "primary_crime_types": ["theft", "assault", "harassment"],
+  "calculated_at": "2026-01-26T10:00:00Z"
+}
+Visualization Requirements:
+
+Render cluster boundaries on heatmap as colored polygons
+Color intensity based on crime_count or risk_score
+Clickable clusters showing detailed statistics
+
+Performance Optimization:
+
+Use spatial indexing (R-tree) for neighbor searches
+Parallel processing for large datasets
+Incremental clustering for new data (don't re-cluster entire dataset)
+
+
+FR-ML-002: Temporal Risk Forecasting (LSTM)
+Priority: P0 (Critical)
+User Story: As a patrol supervisor, I want to predict crime risk for the next 24 hours so I can schedule patrols proactively.
+Description: System shall predict hourly crime risk using LSTM neural networks trained on historical time-series crime data.
+Acceptance Criteria:
+
+Implement bidirectional LSTM with minimum 2 layers:
+
+Layer 1: 128 hidden units
+Layer 2: 64 hidden units
+
+
+Accept input sequences of 168 hours (7 days) to predict next 24 hours
+Include attention mechanism to weight important time periods
+Train separate models for:
+
+Each crime category (theft, assault, harassment, vandalism, drug_related)
+Overall aggregate risk
+
+
+Achieve prediction accuracy:
+
+Mean Absolute Error (MAE) < 2.0 for hourly crime count predictions
+R² score > 0.70 for correlation between predicted and actual
+
+
+Update model weights weekly with new crime data
+Inference latency < 100ms for single location-time query
+Support batch prediction for full city grid (1km x 1km cells)
+
+Model Architecture:
+Input Layer: [batch_size, 168 timesteps, n_features]
+  ↓
+Bidirectional LSTM Layer 1: 128 units
+  - return_sequences=True
+  - dropout=0.2
+  ↓
+Attention Mechanism
+  - Self-attention weights computed over sequence
+  ↓
+Bidirectional LSTM Layer 2: 64 units
+  - return_sequences=False
+  - dropout=0.2
+  ↓
+Dense Layer: 32 units, ReLU activation
+  ↓
+Dropout: 0.3
+  ↓
+Output Layer: 24 units (24-hour forecast), Linear activation
+
+Loss Function: Mean Squared Error (MSE)
+Optimizer: Adam (learning_rate=0.001)
+Training Data Preparation:
+
+Create sliding windows of 168-hour sequences
+Features per timestep:
+
+Hour of day (0-23, one-hot encoded)
+Day of week (0-6, one-hot encoded)
+Is weekend (binary)
+Is holiday (binary)
+Weather conditions (temperature, precipitation)
+Crime counts (by type)
+
+
+Normalize features to [0, 1] range
+Train/validation/test split: 70/15/15
+
+Training Process:
+
+Batch size: 32
+Epochs: 100 (with early stopping, patience=10)
+Validation monitoring: MAE on validation set
+Save best model based on validation loss
+Training time budget: <6 hours on GPU
+
+Inference API:
+POST /api/v1/ml/forecast
+{
+  "location": {"lat": 40.7128, "lon": -74.0060},
+  "start_time": "2026-01-26T00:00:00Z",
+  "hours_ahead": 24,
+  "crime_types": ["theft", "assault"]
+}
+
+Response:
+{
+  "forecasts": [
+    {
+      "hour": "2026-01-26T00:00:00Z",
+      "theft_risk": 0.45,
+      "assault_risk": 0.23,
+      "overall_risk": 0.38
+    },
+    ...
+  ]
+}
+Model Monitoring:
+
+Track prediction accuracy over time
+Alert if MAE exceeds threshold (>3.0)
+Automatic retraining trigger if accuracy degrades >10%
+
+
+FR-ML-003: Dynamic Contextual Threat Index (DCTI)
+Priority: P0 (Critical)
+User Story: As a citizen using the app, I want to see a single risk score for my location so I can quickly understand my safety status.
+Description: System shall calculate composite risk scores (0-100) for any location-time combination using multi-factor algorithm.
+Acceptance Criteria:
+
+Combine multiple risk factors with weighted aggregation:
+
+Historical clustering results: 40% weight
+Temporal forecasting: 30% weight
+Environmental modifiers: 20% weight
+Recent crowdsourced reports: 10% weight
+
+
+Normalize final score to 0-100 range (integer)
+Calculate DCTI in <50ms for single query
+Support batch calculation for 10,000+ locations simultaneously
+Provide score breakdown showing contribution of each factor (for authority dashboard)
+
+Scoring Formula:
+python# Component Scores (each normalized to 0-100)
+base_historical_score = get_cluster_risk(lat, lon)  # From DBSCAN
+temporal_forecast_score = get_lstm_prediction(lat, lon, time)  # From LSTM
+environmental_risk_score = calculate_environmental_risk(time, weather, crowd)
+recent_incidents_score = get_recent_reports_score(lat, lon, time_window=7d)
+
+# Weighted Composite
+DCTI = (
+    base_historical_score * 0.40 +
+    temporal_forecast_score * 0.30 +
+    environmental_risk_score * 0.20 +
+    recent_incidents_score * 0.10
+)
+
+# Ensure bounds
+DCTI = min(max(DCTI, 0), 100)
+
+# Risk Level Classification
+if DCTI >= 81:
+    risk_level = "critical"  # Red
+elif DCTI >= 61:
+    risk_level = "high"  # Orange
+elif DCTI >= 31:
+    risk_level = "moderate"  # Yellow
+else:
+    risk_level = "low"  # Green
+Component Calculations:
+1. Historical Risk (from clustering):
+pythondef get_cluster_risk(lat, lon):
+    cluster = find_cluster_containing_point(lat, lon)
+    if cluster is None:
+        return 15  # Base risk for non-hotspot areas
+    
+    # Risk based on crime density
+    density = cluster.crime_count / (π * cluster.radius²)
+    density_score = min(density * 10, 60)
+    
+    # Severity multiplier
+    severity_weights = {"low": 1.0, "moderate": 1.5, "high": 2.0, "critical": 2.5}
+    avg_severity = calculate_avg_severity(cluster.crimes)
+    severity_multiplier = severity_weights[avg_severity]
+    
+    return min(density_score * severity_multiplier, 100)
+2. Temporal Risk (from LSTM):
+pythondef get_lstm_prediction(lat, lon, time):
+    forecast = lstm_model.predict(lat, lon, time)
+    # forecast is crime count prediction (e.g., 0-10 crimes per hour)
+    
+    # Normalize to 0-100 scale
+    # Assume 0 crimes = 0 risk, 5+ crimes = 100 risk
+    normalized = min((forecast / 5.0) * 100, 100)
+    return normalized
+3. Environmental Risk:
+pythondef calculate_environmental_risk(time, weather, crowd_density):
+    risk = 0
+    
+    # Time of day
+    hour = time.hour
+    if 22 <= hour or hour < 6:  # Night (10 PM - 6 AM)
+        risk += 15
+    
+    # Weather visibility
+    if weather.visibility < 1000m:  # Low visibility
+        risk += 10
+    
+    # Crowd density (isolation risk)
+    if crowd_density < 10:  # Less than 10 people per 100m
+        risk += 15
+    
+    # No street lighting (if data available)
+    if lighting_status == "poor":
+        risk += 10
+    
+    return min(risk, 100)
+4. Recent Incidents Risk:
+pythondef get_recent_reports_score(lat, lon, time_window=7):
+    reports = get_crowdsourced_reports(
+        lat, lon, 
+        radius=500m, 
+        since=now() - time_window
+    )
+    
+    if len(reports) == 0:
+        return 0
+    
+    # More recent reports = higher weight
+    weighted_sum = 0
+    for report in reports:
+        days_ago = (now() - report.occurred_at).days
+        recency_weight = 1.0 - (days_ago / time_window)
+        severity_weight = {"low": 1, "moderate": 2, "high": 3, "critical": 4}[report.severity]
+        weighted_sum += recency_weight * severity_weight * 10
+    
+    return min(weighted_sum, 100)
+API Response Format:
+json{
+  "location": {"lat": 40.7128, "lon": -74.0060},
+  "timestamp": "2026-01-26T22:00:00Z",
+  "dcti_score": 78,
+  "risk_level": "high",
+  "risk_factors": {
+    "historical": {
+      "score": 65,
+      "weight": 0.40,
+      "contribution": 26.0
+    },
+    "temporal": {
+      "score": 85,
+      "weight": 0.30,
+      "contribution": 25.5
+    },
+    "environmental": {
+      "score": 40,
+      "weight": 0.20,
+      "contribution": 8.0
+    },
+    "recent_incidents": {
+      "score": 60,
+      "weight": 0.10,
+      "contribution": 6.0
+    }
+  },
+  "primary_threats": ["theft", "assault"],
+  "recommendations": [
+    "Avoid isolated areas",
+    "Stay on main streets",
+    "Consider alternate route"
+  ]
+}
+Performance Requirements:
+
+Single query: <50ms (p95)
+Batch query (1000 locations): <2 seconds
+Cache results for 15 minutes (trade-off: freshness vs. load)
+
+Caching Strategy:
+Cache Key: "dcti:{lat}:{lon}:{hour}"
+TTL: 15 minutes
+Invalidation: On new crime data ingestion
+
+FR-ML-004: Model Retraining Pipeline
+Priority: P1 (High)
+User Story: As a data scientist, I want models to automatically retrain on fresh data so prediction accuracy doesn't degrade over time.
+Description: System shall automatically retrain machine learning models on configurable schedules to maintain prediction accuracy.
+Acceptance Criteria:
+
+Scheduled retraining:
+
+LSTM: Weekly (every Sunday 2:00 AM)
+DBSCAN: Monthly (1st of month, 2:00 AM)
+
+
+Trigger-based retraining:
+
+When prediction accuracy drops below 75% (based on validation set)
+When new crime data exceeds 5% of training set size
+
+
+Compare new model performance against current production model:
+
+Validation MAE (for LSTM)
+Silhouette score (for DBSCAN)
+
+
+Automatic deployment if new model improves accuracy by >3%
+Manual approval required if:
+
+Accuracy degrades
+Accuracy improves by <3%
+New model architecture introduced
+
+
+Version all models with:
+
+Timestamp
+Performance metrics (MAE, R², silhouette score)
+Training data hash
+Hyperparameters
+
+
+Rollback capability to previous model version within 5 minutes
+Email notification to administrators on:
+
+Training completion
+Deployment
+Accuracy degradation alerts
+
+
+
+Retraining Workflow:
+1. Data Extraction
+   - Fetch latest crime data from database
+   - Apply same preprocessing as initial training
+   
+2. Data Validation
+   - Check for data drift (distribution changes)
+   - Verify minimum record count (10K for LSTM, 5K for DBSCAN)
+   
+3. Model Training
+   - Split data: 70% train, 15% validation, 15% test
+   - Train model with same architecture
+   - Early stopping on validation loss
+   
+4. Model Evaluation
+   - Calculate performance metrics on test set
+   - Compare against current production model
+   
+5. A/B Testing (Optional for critical updates)
+   - Deploy to 10% of traffic
+   - Monitor for 24 hours
+   - Full rollout if metrics stable
+   
+6. Deployment Decision
+   - If improvement >3%: Auto-deploy
+   - If improvement <3%: Queue for manual review
+   - If degradation: Alert and halt
+   
+7. Model Versioning
+   - Save to model registry
+   - Tag with version number (e.g., lstm_v2.3.1)
+   - Store performance report
+   
+8. Monitoring
+   - Track production metrics
+   - Compare against baseline
+   - Alert if drift detected
+Model Registry Schema:
+json{
+  "model_id": "lstm_v2.3.1",
+  "model_type": "lstm",
+  "trained_at": "2026-01-26T02:00:00Z",
+  "status": "production",
+  "metrics": {
+    "mae": 1.85,
+    "r2_score": 0.73,
+    "training_time_minutes": 340
+  },
+  "data_hash": "abc123def456",
+  "hyperparameters": {
+    "layers": [128, 64],
+    "dropout": 0.2,
+    "learning_rate": 0.001
+  },
+  "deployment_history": [
+    {"deployed_at": "2026-01-26T06:00:00Z", "deployed_by": "auto"},
+    {"rolled_back_at": null}
+  ]
+}
+Monitoring Dashboard:
+
+Real-time model performance metrics
+Training job status
+Deployment history
+Alert configuration
+
+
+4.3 Mobile Application Module
+FR-MA-001: User Registration and Authentication
+Priority: P0 (Critical)
+User Story: As a new user, I want to create an account quickly and securely so I can access personalized safety features.
+Description: Users shall create accounts and securely authenticate to access personalized safety features.
+Acceptance Criteria:
+
+Email/Password Registration:
+
+Email validation (RFC 5322 compliant)
+Email verification required before full access
+Verification link expires in 24 hours
+Password requirements:
+
+Minimum 8 characters
+At least 1 uppercase letter
+At least 1 lowercase letter
+At least 1 number
+At least 1 special character (!@#$%^&*)
+
+
+Password strength meter displayed in UI
+Passwords hashed using bcrypt (cost factor 12)
+
+
+Phone Number Registration (Optional):
+
+SMS-based OTP verification
+OTP expires in 10 minutes
+Maximum 3 OTP resend attempts per hour
+
+
+JWT Token-Based Authentication:
+
+Access token expiration: 24 hours
+Refresh token expiration: 30 days
+Automatic token refresh when access token expires
+Secure storage: iOS Keychain, Android Keystore
+
+
+Session Management:
+
+"Remember Me" checkbox for 30-day session persistence
+Logout invalidates tokens on server
+Force logout on suspicious activity
+
+
+Password Recovery:
+
+"Forgot Password" flow via email
+Reset link expires in 1 hour
+Requires email verification before reset
+Password history: prevent reuse of last 5 passwords
+
+
+Social Authentication (Phase 2):
+
+Google Sign-In
+Apple Sign-In (iOS requirement)
+Same profile merge if email matches
+
+
+
+Profile Fields:
+
+Required: Email, Password, Name
+Optional:
+
+Phone number
+Gender (Male, Female, Other, Prefer not to say)
+Age range (18-24, 25-34, 35-44, 45-54, 55-64, 65+)
+Emergency contacts (up to 3)
+
+Name, Phone, Relationship
+
+
+
+
+
+Privacy Controls:
+
+Location sharing preferences:
+
+Always
+While Using App
+Never
+
+
+Notification preferences:
+
+Push notifications enabled/disabled
+Email notifications enabled/disabled
+Do Not Disturb hours (e.g., 11 PM - 7 AM)
+
+
+Data retention preferences:
+
+Delete my location history after: 7/30/90 days
+
+
+Account deletion:
+
+Self-service account deletion
+Grace period: 30 days (can recover)
+Permanent deletion after 30 days
+
+
+
+Security Features:
+
+Rate limiting: Max 5 login attempts per IP per 15 minutes
+Account lockout: 15 minutes after 5 failed attempts
+IP whitelisting option for enterprise accounts
+2FA (Two-Factor Authentication) via SMS or authenticator app (Phase 2)
+
+API Endpoints:
+POST   /api/v1/auth/register
+POST   /api/v1/auth/login
+POST   /api/v1/auth/logout
+POST   /api/v1/auth/refresh
+POST   /api/v1/auth/forgot-password
+POST   /api/v1/auth/reset-password
+GET    /api/v1/auth/verify-email?token=...
+POST   /api/v1/auth/resend-verification
+GET    /api/v1/users/me
+PATCH  /api/v1/users/me
+DELETE /api/v1/users/me
+UI/UX Requirements:
+
+Registration completion time: <2 minutes
+Autofill support for email/password managers
+Clear error messages (e.g., "Email already registered" vs. generic error)
+Accessibility: Screen reader support, high contrast mode
+
+
+FR-MA-002: Interactive Risk Heatmap
+Priority: P0 (Critical)
+User Story: As a user, I want to see a visual map of dangerous areas so I can avoid them.
+Description: Mobile app shall display zoomable map with color-coded risk zones overlaid on city streets.
+Acceptance Criteria:
+
+Map Integration:
+
+SDK: Google Maps (Android/iOS) OR Mapbox
+Initial view: User's current location (with permission)
+Fallback: City center if location denied
+
+
+Risk Layer Overlay:
+
+Display risk heatmap as colored overlay polygons
+Color scheme (Material Design colors):
+
+Green (#388e3c): Low risk (DCTI 0-30)
+Yellow (#fbc02d): Moderate risk (DCTI 31-60)
+Orange (#f57c00): High risk (DCTI 61-80)
+Red (#d32f2f): Critical risk (DCTI 81-100)
+
+
+Opacity: 40% to show streets underneath
+Update heatmap every 30 minutes with latest risk data
+
+
+Zoom Levels:
+
+City-wide view (zoom 11-12): Show aggregate hotspots
+Neighborhood view (zoom 13-15): Show detailed risk zones
+Street-level view (zoom 16-18): Show 100m resolution risk
+
+
+User Location:
+
+Blue dot with heading indicator (arrow)
+Pulsing animation when acquiring location
+Accuracy circle showing GPS uncertainty
+
+
+Interaction:
+
+Tap any location: View risk details panel
+
+Risk score (0-100)
+Risk level (Low/Moderate/High/Critical)
+Primary crime types (top 3)
+Recent incidents (past 7 days)
+Peak danger hours
+
+
+Long press: Set destination for routing
+Pinch to zoom: Smooth zooming
+Pan: Smooth map dragging
+
+
+Temporal View Slider:
+
+Time slider: 0-23 hours (current hour by default)
+Shows risk at different hours of day
+Update heatmap as slider moves
+"Live" mode: Auto-updates to current hour
+
+
+Legend:
+
+Color legend always visible (bottom corner)
+Tap to expand: Show risk level descriptions
+"What does this mean?" help tooltip
+
+
+Performance:
+
+Initial map load: <2 seconds
+Heatmap tile loading: <500ms per tile
+Smooth rendering at 60 FPS during pan/zoom
+Maximum memory usage: 100MB
+
+
+Offline Support:
+
+Cache map tiles for user's home area (5km radius)
+Cache risk data for last accessed areas
+"Offline" indicator when no connectivity
+Auto-sync when connectivity restored
+
+
+
+UI Components:
+┌─────────────────────────────────────┐
+│  [≡ Menu]  Crime Safety  [🔔 (3)]  │ ← Header
+├─────────────────────────────────────┤
+│                                     │
+│      [Interactive Map View]         │
+│                                     │
+│  🔴  ← Red hotspot zones            │
+│  🟠  ← Orange moderate zones        │
+│  🟢  ← Green safe zones             │
+│                                     │
+│  📍  ← User current location        │
+│                                     │
+├─────────────────────────────────────┤
+│ Current Location: Safe ✓            │
+│ Risk Score: 25/100 (Low)            │
+│                                     │
+│ [🎯 Get Safe Route]  [⚠️ Report]    │
+│                                     │
+│ ┌─────────────────────────────────┐ │
+│ │ Time Slider: 2:00 PM            │ │
+│ │ ●━━━━━━━━○━━━━━━━━━━━━━━━━━━━  │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ Legend:                             │
+│ 🟢 Low  🟡 Moderate  🟠 High  🔴 Critical │
+│                                     │
+│ [ 🏠 Home ] [ 🗺️ Map ] [ 👤 Profile ]│ ← Bottom Nav
+└─────────────────────────────────────┘
+Data Loading Strategy:
+
+Grid-based tile system (1km x 1km tiles)
+Load tiles for visible viewport + 1km buffer
+Priority loading: Visible tiles first
+Background loading: Adjacent tiles
+Cache tiles for 1 hour (in-memory), 24 hours (disk)
+
+
+FR-MA-003: Real-Time Safety Alerts
+Priority: P0 (Critical)
+User Story: As a user, I want to receive immediate warnings when I enter dangerous areas so I can change my route.
+Description: App shall send push notifications when user enters or approaches high-risk zones based on configurable thresholds.
+Acceptance Criteria:
+Alert Triggering:
+
+Geofencing: Monitor user location every 30 seconds (configurable)
+Trigger conditions:
+
+User within 200 meters of high-risk zone boundary
+Risk score exceeds user's alert threshold (default: 60)
+First entry only (no repeated alerts for same zone within 1 hour)
+
+
+Alert types:
+
+Low risk (30-60): In-app notification only
+Moderate risk (61-80): Push notification + in-app
+High risk (81-90): Push + vibration + in-app
+Critical risk (91-100): Push + vibration + sound (overrides silent mode)
+
+
+
+Push Notification Content:
+Notification Title: "⚠️ High Risk Area Ahead"
+Notification Body: "You're entering a high theft area. 
+Stay alert and secure valuables."
+Actions: [View Details] [Get Safe Route] [Dismiss]
+In-App Alert Display:
+┌─────────────────────────────────────┐
+│  ⚠️  HIGH RISK AREA AHEAD           │
+├─────────────────────────────────────┤
+│                                     │
+│  Risk Score: 78/100                 │
+│  Distance: 0.3 km ahead             │
+│                                     │
+│  Primary Threats:                   │
+│  • Theft (45% of incidents)         │
+│  • Assault (30% of incidents)       │
+│                                     │
+│  Peak Danger Hours:                 │
+│  8 PM - 11 PM                       │
+│                                     │
+│  Safety Recommendations:            │
+│  ✓ Stay on main streets             │
+│  ✓ Avoid isolated areas             │
+│  ✓ Consider alternate route         │
+│                                     │
+│  Recent Incidents (7 days):         │
+│  • 3 thefts reported                │
+│  • 1 assault reported               │
+│                                     │
+│  ┌─────────────────────────────────┐│
+│  │  [🗺️ View Safer Route]          ││
+│  └─────────────────────────────────┘│
+│                                     │
+│  ┌─────────────────────────────────┐│
+│  │  [❌ Dismiss Alert]              ││
+│  └─────────────────────────────────┘│
+│                                     │
+└─────────────────────────────────────┘
+Alert Frequency Limits (Prevent Spam):
+
+Maximum 1 alert per location per hour
+Maximum 5 alerts per day (resets at midnight)
+"Snooze" option: Disable alerts for 30/60/120 minutes
+User can adjust threshold in settings
+
+Alert History:
+
+Log all received alerts
+Display in "Alert History" screen
+Fields: Timestamp, Location, Risk Score, User Action
+Retention: 30 days
+Export to CSV option
+
+User Actions Tracking:
+
+Viewed: User opened alert detail
+Dismissed: User dismissed without action
+Requested Route: User tapped "View Safer Route"
+Ignored: Notification not opened within 5 minutes
+
+Background Location Tracking:
+
+iOS: Background location with "Always" permission
+Android: Foreground service with persistent notification
+Battery optimization: Adaptive location frequency
+
+High risk area: Every 30 seconds
+Low risk area: Every 2 minutes
+Stationary: Every 5 minutes
+
+
+Privacy: Location not stored on server (except for alerts)
+
+Alert Settings (User Configurable):
+┌─────────────────────────────────────┐
+│  Alert Settings                     │
+├─────────────────────────────────────┤
+│                                     │
+│  Alert Threshold: [    65    ]     │
+│  ━━━━━━━●━━━━━━━━━━━━━━━━━━━━━     │
+│  0 (All)      50        100         │
+│                                     │
+│  ☑ High Risk Alerts                 │
+│  ☑ Moderate Risk Alerts             │
+│  ☐ Low Risk Alerts                  │
+│                                     │
+│  ☑ Vibration                        │
+│  ☑ Sound (Override Silent Mode)     │
+│                                     │
+│  Do Not Disturb Hours:              │
+│  From: [11:00 PM] To: [7:00 AM]     │
+│                                     │
+│  Maximum Alerts Per Day: [5]        │
+│                                     │
+└─────────────────────────────────────┘
+Performance Requirements:
+
+Geofence check latency: <100ms
+Push notification delivery: <3 seconds
+Battery impact: <5% additional drain per day
+
+Privacy Considerations:
+
+User can disable background tracking entirely
+Clear disclosure of location usage in permissions prompt
+Location data encrypted in transit and at rest
+
+
+FR-MA-004: Safe Route Navigation
+Priority: P1 (High)
+User Story: As a user, I want to find the safest route to my destination, even if it's not the fastest.
+Description: App shall calculate and display multiple route options optimized for safety rather than just shortest distance.
+Acceptance Criteria:
+Route Input:
+
+Origin: Auto-populate with current location OR manual address entry
+Destination: Address search (autocomplete) OR tap on map
+Travel mode: Walking (primary), Driving, Cycling, Transit
+
+Route Calculation:
+
+Calculate 3 route alternatives:
+
+Safest Route: Minimizes cumulative risk score
+Fastest Route: Minimizes travel time (Google Maps default)
+Balanced Route: Optimizes safety/time tradeoff (default selection)
+
+
+Safety Score Calculation:
+
+python  route_safety_score = sum([
+      segment.length_km * segment.risk_score
+      for segment in route.segments
+  ]) / route.total_length_km
+  
+  # Lower score = safer route
+
+A Pathfinding Algorithm* with custom cost function:
+
+python  cost = (
+      distance_km * time_weight +
+      sum(segment_risk_scores) * safety_weight +
+      lighting_penalty +
+      isolation_penalty
+  )
+  
+  # Weight configurations:
+  Safest Route:   safety_weight=1.0, time_weight=0.1
+  Fastest Route:  safety_weight=0.1, time_weight=1.0
+  Balanced Route: safety_weight=0.6, time_weight=0.4
+Route Display:
+
+Display all 3 routes on map with different colors:
+
+Safest: Green line (thickest)
+Fastest: Blue line (medium)
+Balanced: Purple line (medium)
+
+
+Highlight selected route
+Show for each route:
+
+Total distance (km or miles)
+Estimated time
+Average risk score (0-100)
+Number of high-risk zones crossed
+
+
+
+Route Selection UI:
+┌─────────────────────────────────────┐
+│  [← Back]  Safe Route               │
+├─────────────────────────────────────┤
+│                                     │
+│      [Map with 3 Routes]            │
+│                                     │
+│  From: Current Location             │
+│  To: 123 Main St, Downtown          │
+│                                     │
+├─────────────────────────────────────┤
+│                                     │
+│  ● Balanced Route (Recommended)     │
+│    5.2 km • 62 min • Risk: 42/100   │
+│    2 moderate risk zones            │
+│                                     │
+│  ○ Safest Route                     │
+│    6.1 km • 75 min • Risk: 28/100   │
+│    0 high risk zones                │
+│                                     │
+│  ○ Fastest Route                    │
+│    4.8 km • 55 min • Risk: 68/100   │
+│    1 high risk zone ⚠️               │
+│                                     │
+│  [Start Navigation]                 │
+│                                     │
+└─────────────────────────────────────┘
+Turn-by-Turn Navigation:
+
+Voice guidance (e.g., "In 200 meters, turn right on Main St")
+Visual navigation arrows
+Distance to next turn
+Current speed (if driving/cycling)
+ETA updates every 30 seconds
+
+Dynamic Rerouting:
+
+User deviation: Auto-recalculate if user deviates >100 meters from route
+New alerts: Recalculate if high-risk alert emerges along route
+Real-time updates: Update risk scores every 5 minutes during navigation
+Notification: "New safer route available. Switch?" [Yes] [No]
+
+Safety Indicators Along Route:
+
+Color-coded path segments showing risk level
+Warning icons for high-risk zones
+Safe waypoints marked (police stations, hospitals, 24/7 businesses)
+
+Navigation Controls:
+┌─────────────────────────────────────┐
+│  [✕ Exit]           [🔊 Mute]       │
+├─────────────────────────────────────┤
+│                                     │
+│      [Map with Route + Arrow]       │
+│                                     │
+│      ↑                              │
+│    Current                          │
+│    Direction                        │
+│                                     │
+├─────────────────────────────────────┤
+│                                     │
+│  In 200m, turn right                │
+│  onto Main Street                   │
+│                                     │
+│  ETA: 3:45 PM (42 min)              │
+│  Distance: 4.2 km remaining         │
+│                                     │
+│  Current Risk: Moderate 🟡          │
+│                                     │
+│  [ Recenter ]  [ Report Issue ]    │
+│                                     │
+└─────────────────────────────────────┘
+Route Preferences (Settings):
+
+Default route type: Safest / Balanced / Fastest
+Avoid: Highways, Tolls, Ferries
+Maximum acceptable risk score (0-100)
+Prefer: Well-lit streets, High foot traffic areas
+
+Performance Requirements:
+
+Route calculation time: <5 seconds for 3 routes
+Rerouting time: <2 seconds
+Map rendering: 60 FPS during navigation
+
+Offline Capability:
+
+Pre-download routes for offline use
+Cached routes valid for 24 hours
+Offline maps for user's city
+
+
+FR-MA-005: Women Safety Mode
+Priority: P1 (High)
+User Story: As a woman traveling alone, I want enhanced safety features that account for my specific vulnerabilities.
+Description: Specialized mode providing enhanced safety features specifically addressing women's safety concerns during vulnerable situations.
+Acceptance Criteria:
+Activation:
+
+Manual: Toggle in app settings OR quick-access widget
+Automatic: Auto-activate during configured hours (default: 10 PM - 6 AM)
+Visual indicator: Purple theme / icon when active
+Persistent notification: "Women Safety Mode Active"
+
+Enhanced Features:
+1. Lower Alert Thresholds:
+
+Trigger alerts at risk score ≥ 50 (vs. standard 60)
+More sensitive to isolation and nighttime risks
+Prioritize warnings over reducing alert fatigue
+
+2. Isolation Detection:
+
+Algorithm analyzes crowd density estimates
+Trigger: User alone (crowd <10 people per 100m radius) in moderate+ risk zone
+Alert message: "You're alone in a moderate risk area. Stay on main roads."
+Data sources:
+
+Foot traffic models (from historical patterns)
+Business operating hours (open establishments = safer)
+Transit schedules (last bus/train timing)
+
+
+
+Isolation Detection Logic:
+pythonif women_safety_mode_enabled:
+    if time.hour >= 22 or time.hour <= 6:  # Night hours
+        crowd_density = estimate_crowd_density(location, time)
+        if crowd_density < 10:  # People per 100m radius
+            if location_risk_score > 50:
+                trigger_isolation_alert()
+3. Quick SOS Button:
+
+Prominent red SOS button always visible on main screen
+Activation: Press and hold for 3 seconds (prevents accidental triggers)
+Actions triggered:
+
+SMS to emergency contacts with live location link
+In-app alert to nearby users (opt-in SafetyNet network)
+Audio recording starts (if user pre-consented)
+Flash SOS signal on screen
+Optional: Auto-call emergency services (Phase 2)
+
+
+
+SOS Message Format:
+🚨 EMERGENCY ALERT 🚨
+
+[Name] has activated their safety alert.
+
+Current Location:
+https://maps.google.com/?q=40.7128,-74.0060
+
+Time: Jan 26, 2026 10:45 PM
+
+This is an automated message from Crime Safety App.
+4. Fake Call Feature:
+
+Simulates incoming phone call for deterrence
+Configurable caller ID (e.g., "Mom", "Dad", "Friend")
+Realistic ringtone and vibration
+Option to have fake conversation (pre-recorded audio)
+Trigger: One-tap button OR shake gesture
+
+5. Night-Time Route Preferences:
+
+Prioritize well-lit main roads over shortcuts
+Avoid parks, alleys, isolated areas
+Prefer routes near open businesses
+Show street lighting status on map (if data available)
+
+6. Check-In Feature:
+
+Set expected arrival time
+Auto-notify contacts if not checked in by deadline
+"I'm Safe" one-tap check-in button
+Automatic check-in when reaching destination
+
+7. Share Live Location:
+
+Share real-time location with trusted contacts
+Time-limited: 15 min / 30 min / 1 hour / Until I arrive
+Shareable link: https://safety.app/live/[unique-token]
+Recipients don't need app installed
+
+Women Safety Mode UI:
+┌─────────────────────────────────────┐
+│  ←  Women Safety Mode   [ON]  🟣    │
+├─────────────────────────────────────┤
+│                                     │
+│  🛡️ ACTIVE PROTECTION                │
+│                                     │
+│  Status: Monitoring                 │
+│  Location: Shared with contacts     │
+│                                     │
+│  ┌─────────────────────────────────┐│
+│  │         🚨 SOS BUTTON            ││
+│  │    (Press and Hold 3 sec)       ││
+│  └─────────────────────────────────┘│
+│                                     │
+│  Emergency Contacts:                │
+│  👤 Mom - (555) 123-4567 ✓          │
+│  👤 Dad - (555) 987-6543 ✓          │
+│  👤 Friend - (555) 456-7890 ✓       │
+│                                     │
+│  Quick Actions:                     │
+│  ┌───────────┬───────────────────┐  │
+│  │📞 Fake Call│ ✓ Check In       │  │
+│  └───────────┴───────────────────┘  │
+│                                     │
+│  Settings:                          │
+│  ☑ Auto-activate at night (10PM)    │
+│  ☑ Isolation alerts                 │
+│  ☑ Share live location              │
+│  ☑ Audio recording on SOS           │
+│                                     │
+│  Recent Activity:                   │
+│  • No alerts in past 24 hours       │
+│                                     │
+└─────────────────────────────────────┘
+Configuration Options:
+
+Auto-activation schedule (custom hours)
+Emergency contacts (up to 5)
+SOS trigger method: Hold button / Shake / Voice command
+Audio recording consent (required by law in some jurisdictions)
+SafetyNet community alerts: Opt-in / Opt-out
+
+Privacy & Security:
+
+Audio recordings stored locally only (not uploaded)
+Auto-delete recordings after 7 days (unless flagged)
+Live location sharing expires automatically
+Clear consent required for all tracking features
+
+Performance:
+
+SOS activation latency: <1 second
+SMS delivery: <5 seconds
+Location share link generation: <2 seconds
+
+
+FR-MA-006: Incident Reporting Interface
+Priority: P1 (High)
+User Story: As a citizen, I want to easily report safety incidents I witness so the community is aware and authorities are notified.
+Description: Users shall easily report safety incidents or concerns through intuitive mobile interface.
+Acceptance Criteria:
+Access:
+
+Prominent "Report Incident" button on main screen
+Accessible from: Home screen, Map screen, Navigation screen
+Also accessible via Women Safety Mode
+
+Report Form:
+Step 1: Incident Type
+┌─────────────────────────────────────┐
+│  [✕ Cancel]  Report Incident        │
+├─────────────────────────────────────┤
+│                                     │
+│  What happened?                     │
+│                                     │
+│  [  🎒  Theft  ]                    │
+│  [  👊  Assault  ]                  │
+│  [  😟  Harassment  ]               │
+│  [  🔨  Vandalism  ]                │
+│  [  👀  Suspicious Activity  ]      │
+│  [  ❓  Other  ]                    │
+│                                     │
+│  [Next]                             │
+│                                     │
+└─────────────────────────────────────┘
+Step 2: Location & Time
+┌─────────────────────────────────────┐
+│  [← Back]  Report Incident  [2/4]   │
+├─────────────────────────────────────┤
+│                                     │
+│  Where did it happen?               │
+│                                     │
+│  ● Current Location                 │
+│    123 Main St, Downtown            │
+│    [Adjust on Map]                  │
+│                                     │
+│  ○ Different Location               │
+│    [Enter Address]                  │
+│                                     │
+│  When did it happen?                │
+│                                     │
+│  ● Just now                         │
+│  ○ Earlier today: [Select Time]    │
+│  ○ Yesterday: [Select Date & Time] │
+│                                     │
+│  [Next]                             │
+│                                     │
+└─────────────────────────────────────┘
+Step 3: Details
+┌─────────────────────────────────────┐
+│  [← Back]  Report Incident  [3/4]   │
+├─────────────────────────────────────┤
+│                                     │
+│  Add details (optional):            │
+│                                     │
+│  ┌─────────────────────────────────┐│
+│  │                                 ││
+│  │ [Description text area]         ││
+│  │ Max 500 characters              ││
+│  │                                 ││
+│  │                                 ││
+│  └─────────────────────────────────┘│
+│  245 characters remaining           │
+│                                     │
+│  Severity:                          │
+│  ○ Minor  ● Moderate  ○ Serious     │
+│                                     │
+│  Add Photos (optional):             │
+│  [📷 Take Photo]  [🖼️ Choose Photo] │
+│                                     │
+│  [+] [+] [+]  (0/3 photos)          │
+│                                     │
+│  [Next]                             │
+│                                     │
+└─────────────────────────────────────┘
+Step 4: Submit
+┌─────────────────────────────────────┐
+│  [← Back]  Report Incident  [4/4]   │
+├─────────────────────────────────────┤
+│                                     │
+│  Review Your Report:                │
+│                                     │
+│  Type: Theft                        │
+│  Location: 123 Main St, Downtown    │
+│  Time: Just now (3:45 PM)           │
+│  Severity: Moderate                 │
+│  Description: "Someone attempted..." │
+│  Photos: 2 attached                 │
+│                                     │
+│  ☑ Submit anonymously               │
+│    (Your identity won't be shared)  │
+│                                     │
+│  ☐ Notify nearby users              │
+│    (Warn others in the area)        │
+│                                     │
+│  By submitting, you agree to our    │
+│  Community Guidelines               │
+│                                     │
+│  [Submit Report]                    │
+│                                     │
+└─────────────────────────────────────┘
+Auto-Populated Fields:
+
+Location: Auto-populate with current GPS coordinates
+Timestamp: Auto-populate with current time
+Weather: Auto-captured (if available)
+User ID: Linked (unless anonymous)
+
+Photo Handling:
+
+Maximum 3 photos per report
+Max 5MB per photo (auto-compress if larger)
+Supported formats: JPEG, PNG
+Strip EXIF metadata (privacy protection)
+Upload progress indicator
+Retry on failed upload
+
+Submission:
+
+Generate reference number: Format INC-2026-123456
+Confirmation screen:
+
+  ┌─────────────────────────────────────┐
+  │  ✓ Report Submitted                 │
+  ├─────────────────────────────────────┤
+  │                                     │
+  │  Thank you for keeping our          │
+  │  community safe!                    │
+  │                                     │
+  │  Reference Number:                  │
+  │  INC-2026-123456                    │
+  │                                     │
+  │  Your report has been:              │
+  │  ✓ Logged in our system             │
+  │  ✓ Sent to local authorities        │
+  │  ☑ Shared with nearby users         │
+  │                                     │
+  │  We'll update you on any actions    │
+  │  taken.                             │
+  │                                     │
+  │  [View My Reports]  [Done]          │
+  │                                     │
+  └─────────────────────────────────────┘
+Spam Prevention:
+
+Rate limiting:
+
+Max 10 reports per user per 24 hours
+Max 3 reports per hour
+
+
+IP-based duplicate detection
+Flag suspicious patterns (same location/time)
+Administrator review for flagged reports
+
+Report History:
+
+User can view their past reports
+Fields shown: Date, Type, Location, Status, Reference Number
+Status values:
+
+Submitted: Under review
+Verified: Confirmed by authorities
+Investigating: Police investigating
+Resolved: Incident resolved
+Dismissed: Not verified
+
+
+User can edit/delete own reports within 24 hours
+
+Notification to User:
+
+Push notification when status changes
+Email notification for verified/resolved reports
+
+Authority Notification:
+
+High severity reports → Immediate email to authorities
+Moderate severity → Daily digest
+Low severity → Weekly digest
+
+Community Alerts:
+
+If user opts-in "Notify nearby users":
+
+Alert sent to users within 500m radius
+Alert content: Type, location, time (no personal details)
+Respects user privacy (anonymous by default)
+
+
+
+Abuse Prevention:
+
+User reputation score (based on verified reports)
+Automatic suspension after 3 false reports
+Manual review for suspicious patterns
+
+5. NON-FUNCTIONAL REQUIREMENTS
+5.1 Performance Requirements
+NFR-P-001: Response Time
+Description: System shall respond to user interactions within acceptable latency thresholds to ensure smooth user experience.
+Acceptance Criteria:
+
+API Response Time:
+
+p95 < 200ms (95th percentile)
+p99 < 500ms (99th percentile)
+p99.9 < 1000ms
+
+
+Mobile App:
+
+Startup time (cold start): < 3 seconds
+Startup time (warm start): < 1 second
+Heatmap loading time: < 2 seconds
+Route calculation time: < 5 seconds
+Screen navigation: < 300ms
+
+
+Dashboard:
+
+Page load time: < 3 seconds
+Chart rendering: < 500ms per chart
+Data query response: < 1 second
+
+
+
+Measurement Method:
+
+Application Performance Monitoring (APM) tools (New Relic, Datadog)
+Synthetic monitoring (Pingdom, UptimeRobot)
+Real User Monitoring (RUM)
+
+
+NFR-P-002: Throughput
+Description: System shall handle expected user load and data volume without performance degradation.
+Acceptance Criteria:
+
+Concurrent Users:
+
+Support 100,000 concurrent active users
+Sustained load: 50,000 users
+Peak load: 150,000 users (during events)
+
+
+API Requests:
+
+Handle 1,000 requests per second (sustained)
+Peak: 2,500 requests per second
+
+
+Location Updates:
+
+Process 10,000 location updates per second
+Each update triggers geofence check
+
+
+Push Notifications:
+
+Send 50,000 push notifications per minute
+Batch processing for efficiency
+
+
+
+Load Testing:
+
+Use Apache JMeter or Locust
+Simulate realistic user behavior patterns
+Test scenarios:
+
+Normal load (50K users)
+Peak load (150K users)
+Spike test (sudden 3x increase)
+Endurance test (sustained load for 24 hours)
+
+
+
+
+NFR-P-003: Scalability
+Description: System architecture shall support horizontal scaling to accommodate user growth.
+Acceptance Criteria:
+
+Horizontal Scaling:
+
+API servers: Auto-scale from 2 to 20 instances
+ML inference servers: Auto-scale from 1 to 10 instances
+Database: Read replicas (up to 5)
+
+
+Auto-Scaling Triggers:
+
+CPU utilization > 70%
+Memory utilization > 80%
+Request queue depth > 100
+
+
+Scaling Speed:
+
+New instance provisioned within 2 minutes
+Instance added to load balancer within 30 seconds
+
+
+Database:
+
+Vertical scaling: Up to 64 vCPUs, 256GB RAM
+Sharding strategy defined for >10M crime records
+
+
+
+Architecture:
+
+Stateless API servers (no session affinity required)
+Sticky sessions disabled (use JWT tokens)
+Shared cache layer (Redis cluster)
+CDN for static assets (CloudFlare, CloudFront)
+
+
+5.2 Reliability Requirements
+NFR-R-001: Availability
+Description: System shall maintain high availability to ensure users can access safety features when needed.
+Acceptance Criteria:
+
+System Uptime: 99.9% (monthly)
+
+Allowed downtime: < 45 minutes per month
+< 720 minutes per year
+
+
+Planned Maintenance:
+
+Weekly maintenance windows: Off-peak hours (2-4 AM local time)
+Advance notice: 7 days for planned downtime
+
+
+Deployment Strategy:
+
+Zero-downtime deployments using blue-green strategy
+Rollback capability within 5 minutes
+
+
+
+Monitoring:
+
+Uptime monitoring (Pingdom, UptimeRobot)
+Alert on downtime within 1 minute
+Incident response SLA: 15 minutes acknowledgment
+
+
+NFR-R-002: Fault Tolerance
+Description: System shall continue operating gracefully in presence of component failures.
+Acceptance Criteria:
+
+Database Failover:
+
+Automatic failover to replica within 30 seconds
+Primary-replica architecture with synchronous replication
+Replica lag < 1 second
+
+
+External API Failures:
+
+Retry logic: 3 attempts with exponential backoff (1s, 2s, 4s)
+Circuit breaker pattern: Trip after 5 consecutive failures
+Fallback behavior defined for each API
+
+
+ML Service Failures:
+
+Serve cached predictions if ML service down
+Cache TTL: 1 hour
+Degrade gracefully: Use historical average if cache miss
+
+
+Message Queue:
+
+Dead letter queue for failed messages
+Retry failed messages up to 5 times
+Alert on persistent failures
+
+
+
+
+NFR-R-003: Data Integrity
+Description: System shall ensure data accuracy and consistency across all operations.
+Acceptance Criteria:
+
+Database Transactions:
+
+ACID compliance for critical operations (user registration, incident reporting)
+Use database transactions for multi-table updates
+
+
+Foreign Key Constraints:
+
+Enforce referential integrity
+Cascade deletes where appropriate
+Prevent orphaned records
+
+
+Data Validation:
+
+Validation at API layer (input sanitization)
+Validation at database layer (constraints, triggers)
+Validation at application layer (business logic)
+
+
+Audit Trails:
+
+Log all data modifications:
+
+Who (user_id)
+What (action)
+When (timestamp)
+Previous value, New value
+
+
+Immutable audit logs (append-only)
+
+
+
+
+5.3 Security Requirements
+NFR-S-001: Authentication & Authorization
+Description: System shall implement robust authentication and authorization mechanisms to protect user data and system resources.
+Acceptance Criteria:
+
+Authentication:
+
+JWT tokens with 24-hour expiration
+Refresh tokens with 30-day expiration
+Token rotation on refresh
+Secure token storage: iOS Keychain, Android Keystore
+
+
+Password Security:
+
+Hashing: bcrypt with cost factor 12
+Salt: Unique per user (handled by bcrypt)
+Minimum password strength enforced
+
+
+Account Security:
+
+Account lockout: 5 failed attempts in 15 minutes
+Lockout duration: 15 minutes
+Email notification on suspicious login (new device, new location)
+
+
+HTTPS/TLS:
+
+All communications over HTTPS (TLS 1.3)
+Certificate pinning in mobile apps (prevent MITM)
+HSTS headers (HTTP Strict Transport Security)
+
+
+
+Role-Based Access Control (RBAC):
+
+Enforce permissions at API level
+Verify user role on every request
+Principle of least privilege
+
+
+NFR-S-002: Data Protection
+Description: System shall protect sensitive user data through encryption and privacy controls.
+Acceptance Criteria:
+
+Encryption at Rest:
+
+Database: AES-256 encryption
+File storage: Server-side encryption (S3 SSE)
+PII fields encrypted at column level
+
+
+Encryption in Transit:
+
+TLS 1.3 for all API communications
+Certificate pinning in mobile apps
+
+
+Data Anonymization:
+
+Location data aggregated for analytics (no individual tracking beyond 24 hours)
+User IDs hashed in analytics databases
+IP addresses masked in logs (last octet: 192.168.1.xxx)
+
+
+GDPR Compliance:
+
+User can export their data (JSON format)
+User can delete their account and data
+Data retention policies enforced:
+
+Location history: 7/30/90 days (user configurable)
+Deleted accounts: Grace period 30 days
+
+
+Consent management for data collection
+
+
+Sensitive Fields Masking:
+
+Passwords never logged
+Email addresses partially masked in logs (u***@example.com)
+Phone numbers masked (555-***-1234)
+
+
+
+
+NFR-S-003: API Security
+Description: System shall protect APIs from abuse and malicious attacks.
+Acceptance Criteria:
+
+Rate Limiting:
+
+100 requests per minute per user (authenticated)
+20 requests per minute per IP (unauthenticated)
+HTTP 429 response when limit exceeded
+Retry-After header included
+
+
+Input Validation:
+
+Whitelist allowed characters (alphanumeric + specific symbols)
+Maximum field lengths enforced
+Type checking (string, number, boolean)
+SQL injection prevention: Parameterized queries only
+XSS prevention: Output encoding
+
+
+CORS Policies:
+
+Restrict API access to authorized origins
+Whitelist: Web dashboard domain, mobile app domains
+Credentials allowed only for whitelisted origins
+
+
+API Keys (for third-party integrations, Phase 3):
+
+Unique keys per integration
+Key rotation every 90 days
+Revocation capability
+
+
+SQL Parameterization:
+
+Never concatenate SQL strings
+Use ORM (SQLAlchemy, Django ORM) or prepared statements
+
+
+
+
+5.4 Usability Requirements
+NFR-U-001: User Interface
+Description: User interfaces shall be intuitive, accessible, and easy to navigate.
+Acceptance Criteria:
+
+Navigation Efficiency:
+
+Any feature accessible within < 3 taps/clicks
+Clear information architecture
+Breadcrumb navigation in dashboard
+
+
+Accessibility Compliance:
+
+WCAG 2.1 Level AA compliance
+Screen reader support (VoiceOver, TalkBack)
+Keyboard navigation (web dashboard)
+Minimum tap target size: 44x44 pixels (iOS), 48x48dp (Android)
+Color contrast ratio: 4.5:1 for text, 3:1 for UI elements
+
+
+Color-Blind Friendly:
+
+Use patterns in addition to colors
+Risk levels indicated by icons + colors
+Tested with color-blindness simulators
+
+
+Font Sizes:
+
+Adjustable font sizes: Small, Medium (default), Large
+Respect system-wide text size settings
+Minimum font size: 12pt
+
+
+
+
+NFR-U-002: Localization
+Description: System shall support internationalization for future expansion.
+Acceptance Criteria:
+
+Phase 1 (MVP):
+
+English language support only
+Framework in place for future languages (i18n)
+
+
+Phase 2-3:
+
+Spanish, French, Hindi support
+Translation files externalized (JSON, gettext)
+
+
+Locale-Specific Formatting:
+
+Date/time display in user's local timezone
+Distance units:
+
+Metric (km): Default for non-US users
+Imperial (miles): US users
+
+
+Currency: Based on deployment region
+Number formatting: Respect locale (1,000 vs 1.000)
+
+
+
+
+NFR-U-003: Onboarding
+Description: New users shall be guided through app features efficiently.
+Acceptance Criteria:
+
+First-Time User Tutorial:
+
+Skippable (don't force users)
+Highlight key features: Heatmap, Alerts, Women Safety Mode
+Max 5 screens
+
+
+Contextual Help Tooltips:
+
+Display on first use of complex features
+"?" icon for help text
+Link to detailed help articles
+
+
+Demo Mode:
+
+Allow users to explore without real location
+Sample data for testing
+Clear indication: "Demo Mode - Sample Data"
+
+
+In-App FAQ:
+
+Searchable help articles
+Categories: Getting Started, Features, Privacy, Troubleshooting
+
+
+
+
+5.5 Compatibility Requirements
+NFR-C-001: Mobile Platforms
+Description: Mobile apps shall support wide range of devices and OS versions.
+Acceptance Criteria:
+
+iOS:
+
+Minimum version: iOS 13.0 (covers 95% of devices as of 2026)
+Tested on: iPhone 8, iPhone SE (2020), iPhone 12, iPhone 15
+iPad support: Responsive layout for larger screens
+
+
+Android:
+
+Minimum version: Android 8.0 (API level 26) (covers 90% of devices)
+Tested on: Samsung Galaxy S10, Google Pixel 5, OnePlus 9
+Tablet support: Responsive layout
+
+
+Screen Sizes:
+
+Small phones: 4.7" (iPhone SE)
+Standard phones: 6.1" (iPhone 12)
+Large phones: 6.7" (iPhone 15 Pro Max)
+Tablets: 7"-12"
+
+
+Responsive Layout:
+
+Adapts to screen size
+No horizontal scrolling
+Readable text on all sizes
+
+
+
+
+NFR-C-002: Web Browsers (Dashboard)
+Description: Authority dashboard shall work across modern web browsers.
+Acceptance Criteria:
+
+Supported Browsers:
+
+Chrome 90+ (primary)
+Firefox 88+
+Safari 14+
+Edge 90+
+
+
+Unsupported: Internet Explorer (end of life)
+Responsive Design:
+
+Desktop: 1920x1080 (primary), 1366x768
+Tablet: 1024x768 (iPad landscape)
+Mobile: 375x667 (iPhone fallback, but desktop version recommended)
+
+
+Feature Detection:
+
+Graceful degradation if browser lacks features
+Polyfills for older browsers (within supported versions)
+
+
+
+
+NFR-C-003: Network Conditions
+Description: Apps shall function acceptably on various network conditions.
+Acceptance Criteria:
+
+Minimum Connection:
+
+Functional on 3G networks (minimum 1 Mbps)
+Optimized for 4G/5G
+WiFi support
+
+
+**Offline Mode**:
+
+Cached maps valid for 24 hours
+Cached risk data valid for 1 hour
+Queued actions: Reports, alerts sync when online
+Progressive Loading:
+
+Load critical content first
+Lazy load images
+Show loading indicators
+
+
+Bandwidth Optimization:
+
+Compress API responses (gzip)
+Optimize images (WebP, progressive JPEG)
+Minimize API calls (batching, caching)
+
+
+
+
+5.6 Compliance Requirements
+NFR-CO-001: Privacy Regulations
+Description: System shall comply with applicable data privacy regulations.
+Acceptance Criteria:
+
+GDPR Compliance (EU users):
+
+User consent for data collection
+Right to access: Users can export data
+Right to erasure: Users can delete account + data
+Right to portability: Data export in machine-readable format (JSON)
+Data retention: Configurable retention periods
+Privacy policy clearly explaining data usage
+
+
+CCPA Compliance (California users):
+
+Disclosure of data collected and purposes
+Right to opt-out of data selling (we don't sell, but must disclose)
+Right to delete personal information
+
+
+Privacy Policy:
+
+Clear, non-legalese language
+Updated date displayed
+Version history maintained
+Consent required before account creation
+
+
+Data Retention Policies:
+
+Crime records: 5 years
+User data: Active + 1 year post-deletion (30-day grace)
+Location history: User configurable (7/30/90 days)
+Logs: 90 days
+
+
+SYSTEM ARCHITECTURE
+High-Level Architecture
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLIENT LAYER                              │
+├──────────────────────────┬──────────────────────────────────────┤
+│   Mobile App             │   Web Dashboard                       │
+│   (React Native)         │   (React.js)                          │
+│   • iOS / Android        │   • Chrome, Firefox, Safari           │
+│   • Offline Support      │   • Responsive Design                 │
+└──────────┬───────────────┴──────────────┬───────────────────────┘
+           │                               │
+           │         HTTPS / TLS 1.3       │
+           │                               │
+┌──────────▼───────────────────────────────▼───────────────────────┐
+│                     API GATEWAY LAYER                             │
+│                   (NGINX Load Balancer)                           │
+│   • Rate Limiting  • Authentication  • Request Routing            │
+└──────────┬──────────────────────────────────────────────────────┘
+           │
+           ├─────────────────┬──────────────────┬──────────────────┐
+           │                 │                  │                  │
+┌──────────▼────────┐ ┌──────▼────────┐ ┌──────▼────────┐ ┌──────▼────────┐
+│   Auth Service    │ │  Risk API     │ │ Routing API   │ │ Incident API  │
+│   (FastAPI)       │ │  (FastAPI)    │ │ (FastAPI)     │ │ (FastAPI)     │
+│   • JWT Tokens    │ │ • Risk Score  │ │ • A* Search   │ │ • Report CRUD │
+│   • User Mgmt     │ │ • Heatmaps    │ │ • Safe Routes │ │ • Validation  │
+└───────────────────┘ └───────────────┘ └───────────────┘ └───────────────┘
+           │                 │                  │                  │
+           └─────────────────┴──────────────────┴──────────────────┘
+                             │
+┌────────────────────────────▼──────────────────────────────────────┐
+│                       CACHE LAYER (Redis)                          │
+│   • Risk Scores  • Heatmap Tiles  • Sessions  • ML Predictions    │
+└────────────────────────────┬──────────────────────────────────────┘
+                             │
+           ┌─────────────────┴──────────────────┬───────────────────┐
+           │                                    │                   │
+┌──────────▼────────────┐          ┌────────────▼───────────┐  ┌───▼──────────┐
+│  ML Inference Service │          │ Geofencing Service     │  │ Notification │
+│  (TensorFlow Serving) │          │ (FastAPI + PostGIS)    │  │ Service      │
+│  • LSTM Models        │          │ • Location Monitoring  │  │ (FCM/APNs)   │
+│  • DBSCAN Clusters    │          │ • Alert Triggers       │  │ • Push Msgs  │
+│  • Batch Prediction   │          │ • Spatial Queries      │  │ • Delivery   │
+└───────────────────────┘          └────────────────────────┘  └──────────────┘
+           │                                    │
+           └─────────────────┬──────────────────┘
+                             │
+┌────────────────────────────▼──────────────────────────────────────┐
+│                   DATA LAYER (PostgreSQL + PostGIS)                │
+│   Tables: users, crime_records, hotspots, incidents, alerts       │
+│   Spatial Indexes: GIST on lat/lon columns                        │
+│   Read Replicas: for analytics queries                            │
+└────────────────────────────────────────────────────────────────┬──┘
+                                                                  │
+┌─────────────────────────────────────────────────────────────────▼──┐
+│                     DATA INGESTION PIPELINE                         │
+│   • Crime Data APIs → ETL → Database                                │
+│   • CSV Upload → Validation → Database                              │
+│   • User Reports → API → Database                                   │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                  ML TRAINING PIPELINE (Batch Process)                │
+│   1. Data Extraction from Database                                   │
+│   2. Feature Engineering                                             │
+│   3. Model Training (DBSCAN, LSTM)                                   │
+│   4. Validation & Testing                                            │
+│   5. Model Deployment to Inference Service                           │
+│   Schedule: Weekly (LSTM), Monthly (DBSCAN)                          │
+└─────────────────────────────────────────────────────────────────────┘
+
+Technology Stack
+LayerTechnologyPurposeMobile AppReact NativeCross-platform iOS/Android developmentWeb DashboardReact.js + Material-UIInteractive authority dashboardAPI GatewayNGINXLoad balancing, SSL termination, rate limitingBackend APIsFastAPI (Python)High-performance REST APIsML FrameworkTensorFlow 2.xLSTM training and inferenceClusteringscikit-learn, HDBSCANDBSCAN/HDBSCAN algorithmsDatabasePostgreSQL + PostGISRelational + spatial data storageTime-Series DBTimescaleDBCrime trends and alert historyCacheRedisSession storage, ML predictions cachingMessage QueueRedis Pub/SubReal-time alert distributionObject StorageAmazon S3Photo uploads, model artifactsPush NotificationsFirebase Cloud Messaging (FCM), APNsMobile push notificationsMappingGoogle Maps API / MapboxInteractive maps and geocodingMonitoringPrometheus + GrafanaMetrics and dashboardsLoggingElasticsearch + Kibana (ELK)Centralized logging and searchDeploymentDocker + KubernetesContainer orchestrationCI/CDGitHub ActionsAutomated testing and deployment
+
+USER INTERFACE SPECIFICATIONS
+Mobile App Wireframes
+(Wireframes provided in FR-MA sections above, including Home Screen, Alert Detail, Women Safety Mode, Navigation, etc.)
+Authority Dashboard Mockups
+(Dashboard mockups provided in FR-AD sections above, including Analytics Dashboard, Patrol Optimization, Alert Threshold Config, etc.)
+
+8. API SPECIFICATIONS
+8.1 Authentication Endpoints
+(Detailed API specs provided in FR-MA-001 section above)
+8.2 Risk Assessment Endpoints
+(Detailed API specs provided in FR-ML-003 section above)
+8.3 Routing Endpoints
+(Detailed API specs provided in FR-MA-004 section above)
+8.4 Incident Reporting Endpoints
+(Detailed API specs provided in FR-MA-006 section above)
+
+9. DATA MODELS
+9.1 Database Schema
+(Detailed schemas provided in FR-DM-003 section above, including users, crime_records, hotspots, incidents, alerts tables)
+
+10. TESTING STRATEGY
+10.1 Unit Testing
+Scope: Individual functions and components
+Tools:
+
+Backend: pytest, unittest (Python)
+Frontend: Jest, React Testing Library
+
+Coverage Target: Minimum 80% code coverage
+Key Test Cases:
+
+Data preprocessing functions (cleaning, validation)
+Risk score calculation algorithm (DCTI)
+Authentication and authorization logic
+API input validation
+Geofencing point-in-polygon calculations
+Route pathfinding algorithm
+Alert threshold configuration logic
+
+
+10.2 Integration Testing
+Scope: Component interactions and API endpoints
+Tools: Postman, pytest with test database
+Test Scenarios:
+
+End-to-end user registration and login flow
+Risk score API returning correct data from ML service
+Route calculation integrating risk scores correctly
+Push notification delivery to mobile devices
+Database CRUD operations with proper constraints
+ML model retraining pipeline
+Alert triggering based on geofencing
+
+
+10.3 Performance Testing
+Scope: System performance under load
+Tools: Apache JMeter, Locust
+Test Scenarios:
+
+API latency under increasing concurrent users (100, 1000, 10000)
+Database query performance with millions of crime records
+ML inference latency for batch predictions
+Push notification delivery at scale (10,000+ simultaneous)
+Heatmap rendering performance
+Route calculation with large datasets
+
+Acceptance Criteria:
+
+API p95 latency < 200ms
+Support 10,000 concurrent users
+Risk score calculation < 50ms
+Zero errors under sustained load
+
+
+10.4 Security Testing
+Scope: Vulnerability assessment and penetration testing
+Tools: OWASP ZAP, Burp Suite
+Test Areas:
+
+SQL injection attempts
+Cross-site scripting (XSS) vectors
+Authentication bypass attempts
+Authorization privilege escalation
+API rate limiting effectiveness
+Password strength enforcement
+Token expiration and refresh
+HTTPS/TLS configuration
+Data encryption at rest and in transit
+
+
+10.5 User Acceptance Testing (UAT)
+Scope: Real-world usage by pilot users
+Participants: 50-100 beta testers (citizens and police officers)
+Duration: 4-6 weeks
+Feedback Collection:
+
+In-app surveys (NPS, CSAT)
+User interviews (qualitative feedback)
+Analytics on feature usage (Google Analytics, Mixpanel)
+Bug reports and feature requests (Jira, GitHub Issues)
+
+Success Criteria:
+
+80%+ user satisfaction rating (CSAT ≥ 4/5)
+<5% crash rate
+Average session duration >5 minutes
+70%+ users return within 7 days (7-day retention)
+
+
+11. DEPLOYMENT PLAN
+11.1 Deployment Architecture
+Cloud Provider: AWS / Google Cloud / Azure (cloud-agnostic design)
+Infrastructure as Code: Terraform
+Container Orchestration: Kubernetes (EKS/GKE/AKS)
+CI/CD Pipeline: GitHub Actions
+
+11.2 Environments
+Development Environment
+
+Purpose: Active development and initial testing
+Data: Synthetic/anonymized sample data
+Access: Development team only
+Deployment: On every commit to dev branch
+Infrastructure: Single instance, minimal resources
+
+Staging Environment
+
+Purpose: Pre-production testing and QA
+Data: Anonymized production-like data (full dataset)
+Access: Development, QA, Product teams
+Deployment: On merge to staging branch
+Infrastructure: Mirrors production (scaled down 50%)
+
+Production Environment
+
+Purpose: Live system serving real users
+Data: Real production data
+Access: Operations team, restricted developer access (read-only)
+Deployment: Manual trigger after staging approval
+Infrastructure: Auto-scaling, multi-availability zone
+
+
+11.3 Deployment Process
+1. Code Commit (Developer pushes to GitHub)
+   ↓
+2. Automated Tests (Unit + Integration)
+   ↓ (Pass)
+3. Build Docker Images (Multi-stage build)
+   ↓
+4. Push to Container Registry (Docker Hub, ECR)
+   ↓
+5. Deploy to Development (Automatic)
+   ↓
+6. Manual QA Sign-off (Product team approval)
+   ↓
+7. Deploy to Staging (Automatic)
+   ↓
+8. Automated Smoke Tests (Critical paths)
+   ↓
+9. UAT and Performance Testing (Load tests)
+   ↓
+10. Product Owner Approval (Final go/no-go)
+   ↓
+11. Blue-Green Deployment to Production
+    - Deploy new version (Green environment)
+    - Run health checks (API endpoints, database connectivity)
+    - Switch traffic from Blue to Green (DNS/Load Balancer)
+    - Monitor for 1 hour (error rates, latency, user feedback)
+    - Rollback if errors detected (switch back to Blue)
+   ↓
+12. Post-Deployment Monitoring (24-hour watch)
+Blue-Green Deployment Details:
+
+Blue: Current production version
+Green: New version being deployed
+Traffic Switch: Load balancer routing change (instant)
+Rollback: Switch traffic back to Blue (<5 minutes)
+
+
+11.4 Rollback Strategy
+Automated Rollback Triggers:
+
+Error rate > 5%
+API latency p99 > 1000ms
+Database connection failures
+Critical service unavailable
+
+Manual Rollback:
+
+Product owner decision
+Critical bug discovered post-deployment
+Execution time: < 5 minutes
+
+Rollback Procedure:
+
+Switch load balancer back to Blue environment
+Verify Blue environment health
+Investigate Green environment issues
+Keep Green running for debugging
+Deploy fix to Green, repeat deployment process
+
+
+12. MAINTENANCE & SUPPORT
+12.1 Model Retraining Schedule
+ModelFrequencyTrigger ConditionsDowntimeDBSCAN ClusteringMonthly (1st of month, 2:00 AM)New crime data > 5% of training setNone (cached predictions serve during retraining)LSTM ForecastingWeekly (Sunday, 2:00 AM)Prediction accuracy < 75%NoneRisk Score CalibrationBi-weeklyFalse positive rate > 15%None
+Retraining Process:
+
+Background job (no user impact)
+New model validated before deployment
+A/B testing for significant changes
+Rollback capability
+
+
+12.2 Monitoring & Alerts
+Metrics to Monitor:
+
+Performance:
+
+API response times (p50, p95, p99)
+Database query performance
+Model prediction latency
+
+
+Reliability:
+
+Error rates by endpoint
+Service uptime
+Database connection pool usage
+
+
+Business:
+
+User session duration and retention
+Alert false positive/negative rates
+Push notification delivery success rate
+Daily/monthly active users
+
+
+
+Alerting Thresholds:
+
+Critical: Error rate > 5%, API downtime, database unavailable
+
+Notification: PagerDuty (SMS + Phone call)
+Response SLA: 15 minutes
+
+
+Warning: Latency spike (p99 > 800ms), high memory usage (>85%), low disk space (<20%)
+
+Notification: Slack, Email
+Response SLA: 1 hour
+
+
+
+On-Call Rotation:
+
+24/7 support with escalation procedures
+Primary on-call engineer (1-week rotation)
+Secondary on-call for escalation
+Incident commander for critical outages
+
+
+12.3 Support Channels
+For Citizens:
+
+In-app help: FAQ, tutorials, contact form
+Email support: support@crimesafety.app
+
+Response SLA:
+
+Critical (app crashes, safety concerns): 4 hours
+High (feature not working): 24 hours
+Medium (questions, feedback): 48 hours
+Low (enhancement requests): 72 hours
+
+
+
+
+
+For Authorities:
+
+Dedicated support hotline: 24/7 phone support for police departments
+Email support: authorities@crimesafety.app (prioritized)
+Account manager: Assigned contact for enterprise customers
+Response SLA:
+
+Critical issues: 1 hour
+High priority: 4 hours
+Medium priority: 24 hours
+Low priority: 72 hours
+
+
+
+Knowledge Base:
+
+Searchable help articles
+Video tutorials
+API documentation
+Troubleshooting guides
+
+
+13. SUCCESS METRICS & KPIs
+13.1 Technical Metrics
+MetricTargetMeasurement MethodHotspot Prediction Accuracy>80%Validate predictions against actual crime occurrences (weekly)Alert False Positive Rate<10%User dismissal rate + feedback surveysAPI Uptime99.9%Monitoring tools (Pingdom, UptimeRobot)Average API Response Time<200ms (p95)Application Performance Monitoring (APM)Mobile App Crash Rate<1%Crash analytics (Firebase Crashlytics)Model Retraining Success Rate>95%Automated retraining pipeline logs
