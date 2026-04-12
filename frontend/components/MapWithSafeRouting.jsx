@@ -8,7 +8,22 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState, useRef } from "react";
+import { Marker } from "react-leaflet";
+import L from "leaflet";
 
+const bluePin = L.divIcon({
+  className: "",
+    html: `<div style="font-size:32px; line-height:1; margin-top:-8px; filter:hue-rotate(220deg) saturate(2) brightness(1.3);">📍</div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
+
+const redPin = L.divIcon({
+  className: "",
+  html: `<div style="font-size:32px; line-height:1; margin-top:-8px;">📍</div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
 /* ─── Tile layers ──────────────────────────────────────────── */
 const TILES = {
   light: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -99,6 +114,7 @@ function routeColor(id) {
   return ROUTE_COLORS[id] || "#a855f7";
 }
 
+
 /* ─── Parse "lat, lon" text → [lat, lon] ───────────────────── */
 function parseCoord(text) {
   if (!text) return null;
@@ -128,6 +144,8 @@ export default function MapWithSafeRouting({
   timeMode = "auto",
   routes = [],
   selectedRoute = null,
+  originCoords = null,
+  destCoords = null,
 }) {
   const [features, setFeatures]   = useState([]);
   const [mapMode,  setMapMode]    = useState("light");
@@ -288,7 +306,17 @@ export default function MapWithSafeRouting({
             </Polyline>
           ) : null
         )}
+        {originCoords && (
+  <Marker position={[originCoords.lat, originCoords.lon]} icon={bluePin}>
+    <Tooltip permanent direction="top" offset={[0, -30]}>Start</Tooltip>
+  </Marker>
+)}
 
+{destCoords && (
+  <Marker position={[destCoords.lat, destCoords.lon]} icon={redPin}>
+    <Tooltip permanent direction="top" offset={[0, -30]}>End</Tooltip>
+  </Marker>
+)}
       </MapContainer>
     </div>
   );
