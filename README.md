@@ -2,89 +2,7 @@
 
 An AI-powered Public Safety Web Application that predicts crime-prone areas using Machine Learning and provides safer routing, real-time alerts, and emergency safety features.
 
-This project combines **React Native + Expo (Mobile App)** with **FastAPI (Backend)** and **DBSCAN clustering** to detect, visualize, and respond to high-risk crime zones.
-
----
-
-## ⚙️ Project Structure
-
-- `SafeRouteApp/`: The mobile frontend application built with React Native and Expo.
-- `backend/`: The FastAPI backend serving risk maps, routing, and user data.
-- `data/`: Datasets used for crime clustering and hotspot generation.
-
----
-
-## 🚀 Installation & Setup
-
-### 🔹 1. Backend Setup
-1. **Navigate to the backend directory:**
-   ```bash
-   cd backend
-   ```
-2. **Create a virtual environment:**
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-3. **Install dependencies:**
-   ```bash
-   pip install fastapi uvicorn sqlalchemy requests pandas tabulate scikit-learn passlib python-multipart python-jose[cryptography]
-   ```
-4. **Configure Environment:**
-   Create a `.env` file in the `backend/` directory with necessary configurations (Database URL, Secret Keys).
-
-### 🔹 2. Mobile App Setup (SafeRouteApp)
-1. **Navigate to the app directory:**
-   ```bash
-   cd SafeRouteApp
-   ```
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Install Expo CLI (if not already installed):**
-   ```bash
-   npm install -g expo-cli
-   ```
-
----
-
-## 🏃 Running the Application
-
-### 🔹 Start the Backend
-```bash
-cd backend
-python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
-```
-The API will be available at `http://localhost:8000`. You can access documentation at `http://localhost:8000/docs`.
-
-### 🔹 Start the Mobile App
-```bash
-cd SafeRouteApp
-npx expo start
-```
-Use the **Expo Go** app on your phone or an emulator to scan the QR code and run the application.
-
----
-
-## 🧪 Testing & Validation
-
-### 🔹 Backend Stress Tests
-We have implemented a comprehensive stress test for the risk routing engine that tests all city hotspots.
-1. **Run Hotspot Stress Test:**
-   ```bash
-   cd backend
-   python c:\Users\aloka\.gemini\antigravity\brain\f5976c0d-11e4-45a5-a9b2-fcbb81c33da9\scratch\test_hotspots.py
-   ```
-   *Note: Ensure the local server is running before starting the test.*
-
-### 🔹 API Endpoint Testing
-You can run automated endpoint tests to verify authentication and routing logic:
-```bash
-cd backend
-python test_endpoints.py
-python test_api_http.py
-```
+This project combines **React + Leaflet (Frontend)** with **FastAPI (Backend)** and **DBSCAN clustering** to detect, visualize, and respond to high-risk crime zones.
 
 ---
 
@@ -105,47 +23,158 @@ Users can:
 ## ⚙️ Tech Stack
 
 ### 🔹 Frontend
-- React Native
-- Expo
-- React Navigation
-- Lucide Icons
+- React.js
+- Leaflet.js (Interactive Maps)
+- CSS (Professional UI)
 
 ### 🔹 Backend
 - FastAPI
 - Python
-- SQLite / SQLAlchemy
 - DBSCAN (Scikit-learn)
-- OSRM (Routing Engine)
+- GeoJSON Processing
 
 ---
 
 # 🌟 Core Features
 
+---
+
+
+### 🔐 Register / Login
+- Secure user authentication
+- Personalized safety preferences
+- User-specific alert system
+
+---
+
+### 🗺️ View Risk Heatmap
+- Interactive Leaflet map
+- Crime hotspot visualization
+- Red zones indicate high crime areas
+- Day / Night risk mode
+- Auto detection based on system time
+
+---
+
 ### 🚗 Request Safe Route
 - Enter origin & destination
-- Calculates risk score using Gaussian decay around hotspots.
-- Automatically compares **Safest**, **Balanced**, and **Fastest** routes.
-- **Dynamic Weighting**: Uses a 40% Peak / 60% Mean composite risk formula to reward detours.
+- Fetches multiple routes using OSRM
+- Calculates risk score using hotspot intersections
+- Automatically selects safest route
+- Displays:
+  - Distance
+  - Duration
+  - Risk Score
 
-### 🛡️ Women Safety Mode
-- Emergency Live-Location sharing.
-- SOS button for immediate contact notification.
-- High-risk zone entry alerts.
+---
+
+### 🚨 Report Incident
+- Users can report crime events
+- Submit:
+  - Title
+  - Description
+  - Location
+  - Severity level
+- Can be used to update backend hotspot data
+
+---
+
+### 📘 View Safety Tips
+- Displays essential public safety guidelines
+- Night travel awareness
+- Emergency contact suggestions
+- Public transport safety advice
+
+---
+
+### 🔔 Receive Safety Alerts for High Risk Zone Area
+- Real-time alert when user enters high-risk zone
+- Uses geolocation monitoring
+- Push notifications / visual alerts
+- Dynamic alert based on Day/Night risk model
+
+---
+
+### 🛡️ Enable Women Safety Mode
+
+A dedicated smart safety system designed for enhanced personal protection.
+
+Includes:
+
+#### 📲 Emergency Contact Notification
+- Sends immediate alert to trusted contacts
+- Shares live location
+- One-click emergency activation
+
+#### 📍 Isolation Detection
+- Detects when user is in:
+  - Low crowd density area
+  - High crime zone
+  - Night hours
+- Automatically triggers precaution alert
 
 ---
 
 # 🤖 Machine Learning Component
 
-- **DBSCAN Clustering**: Identifies dense crime regions from historical data.
-- **Time-Aware Scoring**: Automatically scales risk by $0.7\times$ during the day and $1.6\times$ at night.
-- **Gaussian Risk Decay**: Uses smooth probability distributions ($\sigma = 0.75 \times radius$) to assess risk near hotspot boundaries.
+- DBSCAN clustering identifies dense crime regions
+- Generates GeoJSON hotspot polygons
+- Separate Day and Night models
+- Risk score calculated using Turf.js spatial intersection
+
+---
+
+# 🗺️ Routing Intelligence
+
+- Uses OSRM public routing API
+- Fetches alternative routes
+- Computes:
+  - Crime hotspot intersection count
+  - Route risk score
+- Selects safest route (not just shortest)
+
+---
+
+# 🔮 Future Enhancements
+
+- Real-time crime data streaming
+- Police station proximity indicator
+- Crowd density integration
+- SOS voice activation
+- AI-based predictive alert system
+
+---
+
+# 📊 System Workflow
+
+1. Crime dataset → DBSCAN clustering
+2. GeoJSON hotspot generation
+3. FastAPI serves hotspot data
+4. React + Leaflet displays heatmap
+5. Routing engine evaluates risk
+6. Alert system monitors user location
 
 ---
 
 # 🎯 Project Goal
 
 To build an intelligent public safety system that:
-- Reduces exposure to crime-prone areas.
-- Provides safer, human-centric navigation.
-- Enhances women’s safety using smart detection.
-- Provides real-world impact through data-driven risk assessment.
+
+- Reduces exposure to crime-prone areas
+- Provides safer navigation
+- Empowers users with real-time alerts
+- Enhances women’s safety using smart detection
+
+---
+
+# 🏆 Outcome
+
+A full-stack AI-driven safety platform combining:
+
+✔ Machine Learning  
+✔ Geospatial Analysis  
+✔ Smart Routing  
+✔ Real-time Alerts  
+✔ Emergency Support  
+
+Built with a focus on real-world public safety impact.
