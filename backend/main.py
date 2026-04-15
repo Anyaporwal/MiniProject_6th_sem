@@ -1,116 +1,272 @@
-"""
-SafeRoute API – Main Application Entry Point.
-Thin orchestrator: mounts routers, configures middleware, creates tables.
-"""
-import logging
-from pathlib import Path
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+from pathlib import Path
+import pandas as pd
+import math
+import json
+import smtplib
+from email.mime.text import MIMEText
+from datetime import datetime
 
-from config import get_settings
-from database import engine
-from models import Base
-from middleware import RateLimitMiddleware
+from risk_service import generate_heatmap
+from routing_service import calculate_all_routes
+from auth import router as auth_router
 
-# Import routers
-from auth import router as auth_router, user_router
-from routers.risk import router as risk_router
-from routers.routes import router as routes_router
-from routers.incidents import router as incidents_router
-from routers.safety import router as safety_router
-from routers.alerts import router as alerts_router
+# -------------------------
+# 📌 APP SETUP
+# -------------------------
+app = FastAPI(title="Crime Safety API", version="2.0")
+app.include_router(auth_router)
 
-# ── Setup ───────────────────────────────────────────────────────
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s │ %(name)-30s │ %(levelname)-8s │ %(message)s",
-    datefmt="%H:%M:%S",
-)
-logger = logging.getLogger("saferoute")
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+]
 
-settings = get_settings()
-
-# Create all tables
-Base.metadata.create_all(bind=engine)
-
-# Ensure upload directory exists
-upload_dir = Path(settings.UPLOAD_DIR)
-upload_dir.mkdir(parents=True, exist_ok=True)
-(upload_dir / "incidents").mkdir(exist_ok=True)
-
-# ── App ─────────────────────────────────────────────────────────
-app = FastAPI(
-    title="SafeRoute API",
-    description="Women Safety and Route Navigation API for Nagpur",
-    version="2.0.0",
-)
-
-# ── Middleware ──────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Dev mode — restrict in production via settings.cors_origin_list
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(RateLimitMiddleware, auth_limit=500, unauth_limit=200)
 
-# ── Static files (uploaded photos) ──────────────────────────────
-app.mount("/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
+# -------------------------
+# 📌 FILE PATHS
+# -------------------------
+BASE       = Path(__file__).resolve().parent
+DATA_FOLDER = BASE.parent / "data"
 
-# ── Mount Routers ───────────────────────────────────────────────
-app.include_router(auth_router)
-app.include_router(user_router)
-app.include_router(risk_router)
-app.include_router(routes_router)
-app.include_router(incidents_router)
-app.include_router(safety_router)
-app.include_router(alerts_router)
+DAY_FILE   = DATA_FOLDER / "hotspots_day_ml.geojson"
+NIGHT_FILE = DATA_FOLDER / "hotspots_night_ml.geojson"
+CSV_FILE   = DATA_FOLDER / "hotspot_areas.csv"
 
+print("DAY_FILE:",   DAY_FILE)
+print("NIGHT_FILE:", NIGHT_FILE)
+print("CSV_FILE:",   CSV_FILE)
 
-# ── Health Check ────────────────────────────────────────────────
-@app.get("/health", tags=["System"])
-def health_check():
-    return {
-        "status": "healthy",
-        "version": "2.0.0",
-        "service": "SafeRoute API",
-    }
+data = pd.read_csv(CSV_FILE)
 
+# -------------------------
+# 📌 MODELS
+# -------------------------
+class Location(BaseModel):
+    lat: float
+    lon: float
 
-# ── Legacy compatibility endpoints ─────────────────────────────
-# Keep /login and /register at root for backward compat with mobile app
-from fastapi.security import OAuth2PasswordRequestForm
-from fastapi import Depends
-from sqlalchemy.orm import Session
-from database import get_db
+class RouteRequest(BaseModel):
+    origin: Location
+    destination: Location
+    preferences: dict = {}
 
+class RiskRequest(BaseModel):
+    latitude: float
+    longitude: float
 
-@app.post("/login", tags=["Legacy"], include_in_schema=False)
-def legacy_login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    """Legacy login endpoint for backward compatibility."""
-    from auth import login
-    return login(form_data=form_data, db=db)
+class ContactRequest(BaseModel):
+    contacts: list
 
+class AlertRequest(BaseModel):
+    latitude: float
+    longitude: float
+    time: str
 
-@app.post("/register", tags=["Legacy"], include_in_schema=False, status_code=201)
-def legacy_register(data: dict, db: Session = Depends(get_db)):
-    """Legacy register endpoint for backward compatibility."""
-    from schemas import UserCreate, UserResponse
-    from auth import register
-    user_data = UserCreate(**data)
-    return register(data=user_data, db=db)
-
-
-@app.post("/check-risk", tags=["Legacy"], include_in_schema=False)
-def legacy_check_risk(data: dict):
-    """Legacy risk check endpoint."""
-    from risk_service import calculate_dcti
-    return calculate_dcti(data.get("latitude", 0), data.get("longitude", 0))
+# -------------------------
+# 🔥 HELPER
+# -------------------------
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371000
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-logger.info("[OK] SafeRoute API v2.0.0 ready")
-logger.info(f"[DIR] Uploads directory: {upload_dir.resolve()}")
-logger.info(f"[MAIL] Notifications: {'MOCK (console)' if settings.SMTP_MOCK else 'LIVE (SMTP)'}")
+def resolve_mode(time_mode: str) -> str:
+    if time_mode == "auto":
+        hour = datetime.now().hour
+        return "night" if (hour >= 21 or hour <= 4) else "day"
+    return time_mode  # "day" or "night"
+
+
+def load_hotspot_features(mode: str) -> list:
+    file = DAY_FILE if mode == "day" else NIGHT_FILE
+    if not file.exists():
+        return []
+    with open(file) as f:
+        gj = json.load(f)
+    return gj.get("features", [])
+
+
+# -------------------------
+# 🔥 HEATMAP
+# -------------------------
+@app.get("/api/v1/risk/heatmap")
+def get_heatmap(min_lon: float, min_lat: float, max_lon: float, max_lat: float):
+    grid = generate_heatmap((min_lon, min_lat, max_lon, max_lat))
+    return {"grid_cells": grid, "total_cells": len(grid)}
+
+
+# -------------------------
+# 🔥 ROUTES  ← FIXED: time_mode respected
+# -------------------------
+@app.post("/api/v1/routes/calculate")
+def calculate_routes(req: RouteRequest):
+    time_mode = req.preferences.get("time_mode", "auto")
+    mode = resolve_mode(time_mode)
+
+    routes = calculate_all_routes(
+        (req.origin.lat,      req.origin.lon),
+        (req.destination.lat, req.destination.lon),
+        mode=mode,
+    )
+    return {"routes": routes}
+
+
+# -------------------------
+# 🔥 HOTSPOT FILES
+# -------------------------
+@app.get("/api/v1/hotspots/day")
+def get_day_hotspots():
+    with open(DAY_FILE) as f:
+        return json.load(f)
+
+@app.get("/api/v1/hotspots/night")
+def get_night_hotspots():
+    with open(NIGHT_FILE) as f:
+        return json.load(f)
+
+
+# -------------------------
+# 🔥 HOTSPOTS CSV
+# -------------------------
+@app.get("/hotspots")
+def get_hotspots():
+    return data.to_dict(orient="records")
+
+
+# -------------------------
+# 🔥 CHECK RISK
+# -------------------------
+@app.post("/check-risk")
+def check_risk(user: RiskRequest):
+    for _, zone in data.iterrows():
+        distance = haversine(
+            user.latitude, user.longitude,
+            zone["latitude"], zone["longitude"],
+        )
+        if distance <= zone["radius"]:
+            return {
+                "area_name":  zone["area_name"],
+                "risk_score": zone["risk_score"],
+                "risk_level": zone["risk_level"],
+                "distance":   distance,
+                "alert": "⚠️ You are inside a dangerous hotspot zone",
+            }
+    return {"risk_level": "Safe", "alert": "You are in a safe area"}
+
+
+# -------------------------
+# 🔥 CHECK ISOLATION  ← FIXED: uses real lat/lon + hotspot data
+# -------------------------
+@app.post("/check-isolation")
+def check_isolation(user: RiskRequest):
+    """
+    Count how many ML hotspot zones fall within 1 km of the user.
+      0  nearby zones → Well Connected
+      1  nearby zone  → Moderately Isolated
+      2+ nearby zones → Highly Isolated
+    """
+    mode     = resolve_mode("auto")
+    features = load_hotspot_features(mode)
+
+    RADIUS_M    = 1000
+    nearby_count = sum(
+        1 for f in features
+        if haversine(
+            user.latitude, user.longitude,
+            f["properties"]["center_lat"],
+            f["properties"]["center_lng"],
+        ) <= RADIUS_M
+    )
+
+    if nearby_count == 0:
+        status = "Well Connected"
+    elif nearby_count == 1:
+        status = "Moderately Isolated"
+    else:
+        status = "Highly Isolated"
+
+    return {"status": status, "nearby_zones": nearby_count, "mode": mode}
+
+
+# -------------------------
+# 🔥 SAVE CONTACTS
+# -------------------------
+@app.post("/save-contacts")
+def save_contacts(req: ContactRequest):
+    try:
+        with open("contacts.json") as f:
+            contacts = json.load(f)
+    except Exception:
+        contacts = []
+    contacts.extend(req.contacts)
+    with open("contacts.json", "w") as f:
+        json.dump(contacts, f, indent=4)
+    return {"status": "contacts saved"}
+
+
+# -------------------------
+# 🔥 SEND EMAIL ALERT
+# -------------------------
+@app.post("/send-emergency-alert")
+def send_alert(req: AlertRequest):
+    sender   = "guptag@rknec.edu"
+    password = "xkpiquxcgibiushn"
+    receiver = "guptag@rknec.edu"
+
+    location_link = f"https://maps.google.com/?q={req.latitude},{req.longitude}"
+    body = f"Emergency Alert Triggered\n\nTime: {req.time}\nLocation: {location_link}\n"
+
+    msg = MIMEText(body)
+    msg["Subject"] = "🚨 Emergency Alert"
+    msg["From"]    = sender
+    msg["To"]      = receiver
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(sender, password)
+    server.send_message(msg)
+    server.quit()
+    return {"message": "Emergency email sent"}
+
+
+# -------------------------
+# 🔥 REPORT INCIDENT
+# -------------------------
+@app.post("/api/v1/report")
+def report_incident(req: dict):
+    try:
+        with open("reports.json") as f:
+            reports = json.load(f)
+    except Exception:
+        reports = []
+    reports.append(req)
+    with open("reports.json", "w") as f:
+        json.dump(reports, f, indent=4)
+    return {"message": "Incident reported successfully"}
+
+
+# -------------------------
+# ROOT
+# -------------------------
+@app.get("/")
+def root():
+    return {"message": "API Running 🚀"}
